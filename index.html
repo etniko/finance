@@ -238,6 +238,8 @@ Error message and password prompt
 
 <li>recession</li>
 
+<li>Reveal button widget</li>
+
 <li>StylesheetModifiedMaury</li>
 
 <li>TableOfContents/Breadcrumbs</li>
@@ -261,7 +263,7 @@ Error message and password prompt
 {"created":"20260228074957087","title":"$:/GitHub/Path","text":"","modified":"20260228075219639"},
 {"created":"20260228075130134","title":"$:/GitHub/Repo","text":"etniko/finance","modified":"20260228075133048"},
 {"created":"20260228074829657","title":"$:/GitHub/Username","text":"etniko","modified":"20260228074830748"},
-{"title":"$:/Import","text":"The following tiddlers were imported:\n\n# [[recession]]","status":"complete"},
+{"title":"$:/Import","text":"The following tiddlers were imported:\n\n# [[Reveal button widget]]","status":"complete"},
 {"title":"$:/isEncrypted","text":"no"},
 {"created":"20260301060449427","title":"$:/palette","text":"$:/palettes/Nord","modified":"20260301060449427"},
 {"created":"20260301060531971","title":"$:/SiteSubtitle","text":"Corporate Finance, Valuation and Economics","modified":"20260301060558471"},
@@ -301,6 +303,7 @@ Error message and password prompt
 {"created":"20260106173315389","text":"/* Target the SVG icons inside the Table of Contents buttons */\n.tc-table-of-contents button svg {\n    fill: #759dba !important; /* A light grey/white for visibility */\n    width: 0.8em;\n    height: 0.8em;\n}\n\n/* Optional: Make the arrow highlight when you hover over it */\n.tc-table-of-contents button:hover svg {\n    fill: #88c0d0 !important; /* A Nordic frost blue highlight */\n}\n\n/* Your editor styles remain the same as you provided */\ntextarea.tc-edit-texteditor, \n.tc-tiddler-edit-frame input.tc-titlebar,\n.tc-edit-tagsbar input {\n    background-color: #ffffff !important;\n    color: #2e3440 !important; /* Very dark grey for readability on white */\n    border: 1px solid #cccccc;\n    padding: 10px;\n}\n\n.tc-sidebar-lists .tc-table-of-contents button svg,\n.tc-tree-list-item button svg {\n    fill: #d8dee9 !important;\n}","tags":"MyTOCStyle $:/tags/Stylesheet","title":"MyTOCStyle Nordic","modified":"20260106174219087"},
 {"created":"20260123061848501","text":"\u003C$button popup=\"$:/state/popup-Cat\">Cat\u003C/$button>\n\n\u003C$reveal type=\"popup\" state=\"$:/state/popup-Cat\">\n  \u003Cdiv class=\"tc-drop-down\">\n    \u003C$transclude $tiddler=\"Cat\">Small animal with four legs.\u003C/$transclude>\n  \u003C/div>\n\u003C/$reveal>\n","tags":"$:/tags/TextEditor/Snippet","caption":"pop up button snipet","title":"Pop up button snipet","modified":"20260123061932342"},
 {"created":"20250502050346366","text":"[[aggregate demand curve]] | [[unanticipated inflation]]\n\nWhen the AD (Aggregate Demand) and the SRAS (Short Run Aggregate Supply) is to the left of the LRAS, means that there's no full potential output supply from the economy, therefore there's no full employment, there is unemployment, therefore, recession.\n\n\u003Cimg src=\"https://i.ibb.co/hFBF2Vg9/Screenshot-2025-05-01-22-05-42.png\" alt=\"Screenshot-2025-05-01-22-05-42\" border=\"0\">\n","title":"recession","modified":"20260111082601587","tags":"macroeconomics"},
+{"created":"20260120064153443","text":"\u003C$button set=\"$:/state/def-Cat\" setTo=\"show\">Cat\u003C/$button>\n\n\u003C$reveal type=\"match\" state=\"$:/state/def-Cat\" text=\"show\" animate=\"yes\">\n  \u003C$transclude $tiddler=\"Cat\">\n    Small animal with four legs.\n  \u003C/$transclude>\n  \u003C$button set=\"$:/state/def-Cat\" setTo=\"hide\" class=\"tc-btn-invisible\">▲\u003C/$button>\n\u003C/$reveal>\n","tags":"$:/tags/TextEditor/Snippet","caption":"Reveal button widget","title":"Reveal button widget","modified":"20260120064616774"},
 {"created":"20201205193220691","text":".tc-sidebar-scrollable {\n    margin-top: 0.5em;\n    margin-left: 1em;\n}\n\nbody.tc-body {\n            font-family: \n\"Segoe UI\", Trebuchet Ms, Arial;\n}\n\n.tc-titlebar h1 { \nfont-size: 1.5em; display: inline; \n}\n\nbody.tc-body {\n\n@media screen and (max-width: 600px) {\n  div.example {\n    font-size: 3.5em;\n  }\n\n}\n.tc-tiddlylink.tc-tiddlylink-resolves { \n       color:#a3b9cf; \n}\n\n.recent-horizontal {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.6em;\n  align-items: center;\n}\n\n.recent-horizontal .recent-item {\n  white-space: nowrap;\n}\n","type":"text/css","title":"StylesheetModifiedMaury","tags":"$:/tags/Stylesheet","modified":"20260228051830208"},
 {"created":"20260104065042213","text":"\u003C$list filter=\"[all[current]!title[index]]\">\n\u003Cdiv style=\"font-size:0.9em; margin-bottom:10px; color:#7994af;\">\n\u003C\u003Cshow-breadcrumbs>>\n\u003C/div>\n\u003Chr>\n\u003C/$list>","tags":"$:/tags/ViewTemplate","title":"TableOfContents/Breadcrumbs","modified":"20260123063342600"}
 ]</script><div id="storeArea" style="display:none;"></div>
