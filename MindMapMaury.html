@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Knowledge Map</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #0f172a; }
+        #root { height: 100%; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useEffect, useRef, useState } = React;
+
+        const INITIAL_DATA = {
+            id: "business valuation",
+            children: [
+                { id: "business restructuring", children: [] },
+                { id: "cost of capital", children: [
+                    { id: "WACC", children: [] },
+                    { id: "CAPM", children: [] }
+                ] },
+                { id: "employee share ownership plans", children: [] },
+                { id: "expropriation", children: [] },
+                { id: "fair value", children: [] }
+            ]
+        };
+
+        const App = () => {
+            const canvasRef = useRef(null);
+            const [nodes, setNodes] = useState([]);
+            const [links, setLinks] = useState([]);
+            const [selectedNode, setSelectedNode] = useState(null);
+            const transform = useRef({ x: 0, y: 0, k: 1 });
+            const isDragging = useRef(false);
+            const dragTarget = useRef(null);
+            const lastMousePos = useRef({ x: 0, y: 0 });
+
+            useEffect(() => {
+                const newNodes = [];
+                const newLinks = [];
+
+                const traverse = (item, parent = null, depth = 0) => {
+                    const node = {
+                        id: item.id,
+                        x: Math.random() * 400 + 200,
+                        y: Math.random() * 300 + 150,
+                        vx: 0,
+                        vy: 0,
+                        depth
+                    };
+                    newNodes.push(node);
+                    if (parent) {
+                        newLinks.push({ source: parent.id, target: node.id });
+                    }
+                    item.children?.forEach(child => traverse(child, node, depth + 1));
+                };
+
+                traverse(INITIAL_DATA);
+                setNodes(newNodes);
+                setLinks(newLinks);
+            }, []);
+
+            useEffect(() => {
+                let animationFrame;
+                const simulate = () => {
+                    setNodes(prevNodes => {
+                        const nextNodes = prevNodes.map(n => ({ ...n }));
+                        
+                        for (let i = 0; i < nextNodes.length; i++) {
+                            for (let j = i + 1; j < nextNodes.length; j++) {
+                                const dx = nextNodes[i].x - nextNodes[j].x;
+                                const dy = nextNodes[i].y - nextNodes[j].y;
+                                const distSq = dx * dx + dy * dy || 1;
+                                const force = 1000 / distSq;
+                                const fx = (dx / Math.sqrt(distSq)) * force;
+                                const fy = (dy / Math.sqrt(distSq)) * force;
+                                
+                                nextNodes[i].vx += fx;
+                                nextNodes[i].vy += fy;
+                                nextNodes[j].vx -= fx;
+                                nextNodes[j].vy -= fy;
+                            }
+                        }
+
+                        links.forEach(link => {
+                            const source = nextNodes.find(n => n.id === link.source);
+                            const target = nextNodes.find(n => n.id === link.target);
+                            if (!source || !target) return;
+                            
+                            const dx = target.x - source.x;
+                            const dy = target.y - source.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                            const force = (dist - 140) * 0.02;
+                            const fx = (dx / dist) * force;
+                            const fy = (dy / dist) * force;
+                            
+                            source.vx += fx;
+                            source.vy += fy;
+                            target.vx -= fx;
+                            target.vy -= fy;
+                        });
+
+                        const centerX = window.innerWidth / 2;
+                        const centerY = (window.innerHeight - 80) / 2;
+
+                        nextNodes.forEach(n => {
+                            if (n === dragTarget.current) return;
+                            n.vx += (centerX - n.x) * 0.002;
+                            n.vy += (centerY - n.y) * 0.002;
+                            n.vx *= 0.92;
+                            n.vy *= 0.92;
+                            n.x += n.vx;
+                            n.y += n.vy;
+                        });
+
+                        return nextNodes;
+                    });
+                    animationFrame = requestAnimationFrame(simulate);
+                };
+
+                simulate();
+                return () => cancelAnimationFrame(animationFrame);
+            }, [links]);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                
+                const render = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.save();
+                    ctx.translate(transform.current.x, transform.current.y);
+                    ctx.scale(transform.current.k, transform.current.k);
+
+                    ctx.strokeStyle = '#4b5563';
+                    ctx.lineWidth = 1.5;
+                    links.forEach(link => {
+                        const source = nodes.find(n => n.id === link.source);
+                        const target = nodes.find(n => n.id === link.target);
+                        if (source && target) {
+                            ctx.beginPath();
+                            ctx.moveTo(source.x, source.y);
+                            ctx.lineTo(target.x, target.y);
+                            ctx.stroke();
+                        }
+                    });
+
+                    nodes.forEach(node => {
+                        const isSelected = selectedNode?.id === node.id;
+                        
+                        ctx.shadowBlur = node.depth === 0 ? 15 : 0;
+                        ctx.shadowColor = '#3b82f6';
+
+                        ctx.fillStyle = node.depth === 0 ? '#3b82f6' : '#1f2937';
+                        ctx.strokeStyle = isSelected ? '#fff' : '#60a5fa';
+                        ctx.lineWidth = isSelected ? 3 : 2;
+
+                        const padding = 12;
+                        ctx.font = '14px sans-serif';
+                        const textWidth = ctx.measureText(node.id).width;
+                        const rectW = textWidth + padding * 2;
+                        const rectH = 32;
+
+                        ctx.beginPath();
+                        if (ctx.roundRect) {
+                            ctx.roundRect(node.x - rectW / 2, node.y - rectH / 2, rectW, rectH, 16);
+                        } else {
+                            ctx.rect(node.x - rectW / 2, node.y - rectH / 2, rectW, rectH);
+                        }
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = '#f3f4f6';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(node.id, node.x, node.y);
+                    });
+
+                    ctx.restore();
+                };
+
+                render();
+            }, [nodes, links, selectedNode]);
+
+            const handleMouseDown = (e) => {
+                const rect = canvasRef.current.getBoundingClientRect();
+                const x = (e.clientX - rect.left - transform.current.x) / transform.current.k;
+                const y = (e.clientY - rect.top - transform.current.y) / transform.current.k;
+
+                const clickedNode = nodes.find(n => {
+                    const dx = n.x - x;
+                    const dy = n.y - y;
+                    return Math.sqrt(dx * dx + dy * dy) < 40;
+                });
+
+                if (clickedNode) {
+                    dragTarget.current = clickedNode;
+                    setSelectedNode(clickedNode);
+                } else {
+                    isDragging.current = true;
+                }
+                lastMousePos.current = { x: e.clientX, y: e.clientY };
+            };
+
+            const handleMouseMove = (e) => {
+                if (dragTarget.current) {
+                    const rect = canvasRef.current.getBoundingClientRect();
+                    dragTarget.current.x = (e.clientX - rect.left - transform.current.x) / transform.current.k;
+                    dragTarget.current.y = (e.clientY - rect.top - transform.current.y) / transform.current.k;
+                } else if (isDragging.current) {
+                    transform.current.x += e.clientX - lastMousePos.current.x;
+                    transform.current.y += e.clientY - lastMousePos.current.y;
+                }
+                lastMousePos.current = { x: e.clientX, y: e.clientY };
+            };
+
+            const handleMouseUp = () => {
+                dragTarget.current = null;
+                isDragging.current = false;
+            };
+
+            return (
+                <div className="flex flex-col w-full h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
+                    <header className="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shrink-0">
+                        <div>
+                            <h1 className="text-xl font-bold text-blue-400">Finance Knowledge Map</h1>
+                            <p className="text-xs text-slate-400">Drag nodes to organize • Pan & Zoom available</p>
+                        </div>
+                        {selectedNode && (
+                            <div className="px-3 py-1 bg-blue-900/50 border border-blue-500 rounded text-sm">
+                                Focusing: <span className="font-semibold capitalize">{selectedNode.id}</span>
+                            </div>
+                        )}
+                    </header>
+
+                    <main className="relative flex-grow cursor-grab active:cursor-grabbing">
+                        <canvas
+                            ref={canvasRef}
+                            width={window.innerWidth}
+                            height={window.innerHeight - 80}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                            className="w-full h-full"
+                        />
+                        <div className="absolute bottom-6 left-6 flex flex-col gap-2">
+                            <button onClick={() => transform.current.k *= 1.2} className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-600 flex items-center justify-center shadow-lg">+</button>
+                            <button onClick={() => transform.current.k /= 1.2} className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-600 flex items-center justify-center shadow-lg">-</button>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
