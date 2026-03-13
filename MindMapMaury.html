@@ -25,7 +25,6 @@
     <script type="text/babel">
         const { useEffect, useRef, useState, useMemo } = React;
 
-        // Fallback data if not running inside TiddlyWiki or if cross-origin blocked
         const FALLBACK_DATA = {
             id: "business valuation",
             children: [
@@ -49,12 +48,11 @@
             const [selectedNode, setSelectedNode] = useState(null);
             const [showTOC, setShowTOC] = useState(true);
             
-            const transform = useRef({ x: 0, y: 0, k: 1 });
+            const transform = useRef({ x: 0, y: 0, k: 0.8 });
             const isDragging = useRef(false);
             const dragTarget = useRef(null);
             const lastMousePos = useRef({ x: 0, y: 0 });
 
-            // Safety check for Cross-Origin Access
             const canAccessParent = () => {
                 try {
                     return window.parent && window.parent.location.hostname === window.location.hostname;
@@ -63,7 +61,13 @@
                 }
             };
 
-            // Function to fetch data from TiddlyWiki parent
+            const getTextWidth = (text) => {
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+                context.font = "13px sans-serif";
+                return context.measureText(text).width;
+            };
+
             const getTiddlyWikiData = () => {
                 if (canAccessParent()) {
                     try {
@@ -80,13 +84,12 @@
                             return buildTree(rootTagName);
                         }
                     } catch (e) {
-                        console.warn("TiddlyWiki API found but access failed:", e);
+                        console.warn("TiddlyWiki API access failed:", e);
                     }
                 }
                 return FALLBACK_DATA;
             };
 
-            // Initialize Nodes and Links
             useEffect(() => {
                 const data = getTiddlyWikiData();
                 const newNodes = [];
@@ -99,7 +102,8 @@
                         y: Math.random() * (window.innerHeight * 0.5) + (window.innerHeight * 0.25),
                         vx: 0,
                         vy: 0,
-                        depth
+                        depth,
+                        width: getTextWidth(item.id) + 40 // Pre-calculate width for physics
                     };
                     newNodes.push(node);
                     if (parent) {
@@ -113,31 +117,37 @@
                 setLinks(newLinks);
             }, []);
 
-            // Physics Simulation
             useEffect(() => {
                 let animationFrame;
                 const simulate = () => {
                     setNodes(prevNodes => {
                         const nextNodes = prevNodes.map(n => ({ ...n }));
                         
-                        // Repulsion
+                        // 1. DYNAMIC REPULSION (Aware of Node Widths)
                         for (let i = 0; i < nextNodes.length; i++) {
                             for (let j = i + 1; j < nextNodes.length; j++) {
-                                const dx = nextNodes[i].x - nextNodes[j].x;
-                                const dy = nextNodes[i].y - nextNodes[j].y;
+                                const n1 = nextNodes[i];
+                                const n2 = nextNodes[j];
+                                const dx = n1.x - n2.x;
+                                const dy = n1.y - n2.y;
                                 const distSq = dx * dx + dy * dy || 1;
-                                const force = 1200 / distSq;
-                                const fx = (dx / Math.sqrt(distSq)) * force;
-                                const fy = (dy / Math.sqrt(distSq)) * force;
                                 
-                                nextNodes[i].vx += fx;
-                                nextNodes[i].vy += fy;
-                                nextNodes[j].vx -= fx;
-                                nextNodes[j].vy -= fy;
+                                // Increase repulsion power based on the text width of both nodes
+                                const combinedWidth = n1.width + n2.width;
+                                const force = (2000 + (combinedWidth * 10)) / distSq; 
+                                
+                                const dist = Math.sqrt(distSq);
+                                const fx = (dx / dist) * force;
+                                const fy = (dy / dist) * force;
+                                
+                                n1.vx += fx;
+                                n1.vy += fy;
+                                n2.vx -= fx;
+                                n2.vy -= fy;
                             }
                         }
 
-                        // Attraction (Links)
+                        // 2. ATTRACTION (Links - Increased distance for breathing room)
                         links.forEach(link => {
                             const source = nextNodes.find(n => n.id === link.source);
                             const target = nextNodes.find(n => n.id === link.target);
@@ -146,7 +156,9 @@
                             const dx = target.x - source.x;
                             const dy = target.y - source.y;
                             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                            const force = (dist - 160) * 0.03;
+                            
+                            // Increased ideal distance from 160 to 240 to account for wider labels
+                            const force = (dist - 240) * 0.04;
                             const fx = (dx / dist) * force;
                             const fy = (dy / dist) * force;
                             
@@ -156,6 +168,23 @@
                             target.vy -= fy;
                         });
 
+                        // 3. COLLISION PREVENTION (Hard buffer)
+                        nextNodes.forEach(n1 => {
+                            nextNodes.forEach(n2 => {
+                                if (n1 === n2) return;
+                                const minBuffer = (n1.width + n2.width) / 2 + 10;
+                                const dx = n1.x - n2.x;
+                                const dy = n1.y - n2.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                                
+                                if (dist < minBuffer) {
+                                    const push = (minBuffer - dist) * 0.1;
+                                    n1.vx += (dx / dist) * push;
+                                    n1.vy += (dy / dist) * push;
+                                }
+                            });
+                        });
+
                         const centerX = window.innerWidth / 2.5;
                         const centerY = (window.innerHeight - 80) / 2;
 
@@ -163,8 +192,8 @@
                             if (n === dragTarget.current) return;
                             n.vx += (centerX - n.x) * 0.003;
                             n.vy += (centerY - n.y) * 0.003;
-                            n.vx *= 0.9;
-                            n.vy *= 0.9;
+                            n.vx *= 0.85; // Friction
+                            n.vy *= 0.85;
                             n.x += n.vx;
                             n.y += n.vy;
                         });
@@ -178,7 +207,6 @@
                 return () => cancelAnimationFrame(animationFrame);
             }, [links]);
 
-            // Rendering Logic
             useEffect(() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
@@ -190,13 +218,12 @@
                     ctx.translate(transform.current.x, transform.current.y);
                     ctx.scale(transform.current.k, transform.current.k);
 
-                    // Draw Links
-                    ctx.strokeStyle = '#334155';
-                    ctx.lineWidth = 1;
                     links.forEach(link => {
                         const source = nodes.find(n => n.id === link.source);
                         const target = nodes.find(n => n.id === link.target);
                         if (source && target) {
+                            ctx.strokeStyle = '#334155';
+                            ctx.lineWidth = 1;
                             ctx.beginPath();
                             ctx.moveTo(source.x, source.y);
                             ctx.lineTo(target.x, target.y);
@@ -204,24 +231,18 @@
                         }
                     });
 
-                    // Draw Nodes
                     nodes.forEach(node => {
                         const isSelected = selectedNode?.id === node.id;
                         
-                        if (node.depth === 0 || isSelected) {
-                            ctx.shadowBlur = 15;
-                            ctx.shadowColor = isSelected ? '#60a5fa' : '#3b82f6';
-                        } else {
-                            ctx.shadowBlur = 0;
-                        }
+                        ctx.shadowBlur = (node.depth === 0 || isSelected) ? 15 : 0;
+                        ctx.shadowColor = isSelected ? '#60a5fa' : '#3b82f6';
 
                         ctx.fillStyle = '#1e293b';
                         ctx.strokeStyle = isSelected ? '#60a5fa' : '#475569';
                         ctx.lineWidth = isSelected ? 2.5 : 1.5;
 
                         const padding = 16;
-                        ctx.font = '13px "Segoe UI", sans-serif';
-                        const textWidth = ctx.measureText(node.id).width;
+                        const textWidth = node.width - 40;
                         const rectW = textWidth + padding * 2;
                         const rectH = 34;
 
@@ -229,19 +250,13 @@
                         const r = 17;
                         const x = node.x - rectW / 2;
                         const y = node.y - rectH / 2;
-                        ctx.moveTo(x + r, y);
-                        ctx.lineTo(x + rectW - r, y);
-                        ctx.arcTo(x + rectW, y, x + rectW, y + r, r);
-                        ctx.arcTo(x + rectW, y + rectH, x + rectW - r, y + rectH, r);
-                        ctx.lineTo(x + r, y + rectH);
-                        ctx.arcTo(x, y + rectH, x, y + rectH - r, r);
-                        ctx.arcTo(x, y, x + r, y, r);
-                        ctx.closePath();
+                        ctx.roundRect(x, y, rectW, rectH, r);
                         ctx.fill();
                         ctx.stroke();
 
                         ctx.shadowBlur = 0;
                         ctx.fillStyle = isSelected ? '#fff' : '#cbd5e1';
+                        ctx.font = '13px "Segoe UI", sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.fillText(node.id, node.x, node.y);
@@ -260,16 +275,9 @@
                 transform.current.x = targetX;
                 transform.current.y = targetY;
 
-                // Safe Navigation for TiddlyWiki
                 if (canAccessParent()) {
-                    try {
-                        window.parent.location.hash = encodeURIComponent(node.id);
-                    } catch (e) {
-                        console.warn("Direct hash navigation blocked by security policy.");
-                    }
-                } else {
-                    // Alternative: try a postMessage or just log for local use
-                    console.info("Navigating to concept:", node.id);
+                    try { window.parent.location.hash = encodeURIComponent(node.id); } 
+                    catch (e) { console.warn("Nav blocked."); }
                 }
             };
 
@@ -279,8 +287,8 @@
                 const y = (e.clientY - rect.top - transform.current.y) / transform.current.k;
 
                 const clickedNode = nodes.find(n => {
-                    const textWidth = getTextWidth(n.id);
-                    return Math.abs(n.x - x) < (textWidth/2 + 20) && Math.abs(n.y - y) < 20;
+                    const halfW = n.width / 2;
+                    return Math.abs(n.x - x) < halfW && Math.abs(n.y - y) < 20;
                 });
 
                 if (clickedNode) {
@@ -309,13 +317,6 @@
                 isDragging.current = false;
             };
 
-            const getTextWidth = (text) => {
-                const canvas = document.createElement("canvas");
-                const context = canvas.getContext("2d");
-                context.font = "13px sans-serif";
-                return context.measureText(text).width;
-            };
-
             const sortedNodes = useMemo(() => [...nodes].sort((a,b) => a.id.localeCompare(b.id)), [nodes]);
 
             return (
@@ -323,18 +324,10 @@
                     <header className="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shrink-0 z-20">
                         <div>
                             <h1 className="text-xl font-bold text-blue-400">Finance Knowledge Map</h1>
-                            <p className="text-xs text-slate-400">Linked to TiddlyWiki Tags • Real-time synchronization</p>
+                            <p className="text-xs text-slate-400">Smart collision prevention enabled • {nodes.length} concepts mapped</p>
                         </div>
                         <div className="flex items-center gap-4">
-                            {selectedNode && (
-                                <div className="px-3 py-1 bg-blue-900/30 border border-blue-500/50 rounded text-xs text-blue-300">
-                                    Current: <span className="font-semibold">{selectedNode.id}</span>
-                                </div>
-                            )}
-                            <button 
-                                onClick={() => setShowTOC(!showTOC)}
-                                className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded border border-slate-500"
-                            >
+                            <button onClick={() => setShowTOC(!showTOC)} className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded border border-slate-500">
                                 {showTOC ? "Hide TOC" : "Show TOC"}
                             </button>
                         </div>
@@ -355,7 +348,7 @@
                         {showTOC && (
                             <div className="absolute right-6 top-6 bottom-6 w-64 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-2xl flex flex-col z-10">
                                 <div className="p-4 border-b border-slate-700">
-                                    <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Table of Contents</h3>
+                                    <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Concepts</h3>
                                 </div>
                                 <div className="flex-grow overflow-y-auto p-2 custom-scrollbar">
                                     {sortedNodes.map(node => (
