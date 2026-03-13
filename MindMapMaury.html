@@ -103,7 +103,7 @@
                         vx: 0,
                         vy: 0,
                         depth,
-                        width: getTextWidth(item.id) + 40 // Pre-calculate width for physics
+                        width: getTextWidth(item.id) + 40 
                     };
                     newNodes.push(node);
                     if (parent) {
@@ -123,7 +123,7 @@
                     setNodes(prevNodes => {
                         const nextNodes = prevNodes.map(n => ({ ...n }));
                         
-                        // 1. DYNAMIC REPULSION (Aware of Node Widths)
+                        // 1. REPULSION (Using pre-calculated widths)
                         for (let i = 0; i < nextNodes.length; i++) {
                             for (let j = i + 1; j < nextNodes.length; j++) {
                                 const n1 = nextNodes[i];
@@ -132,9 +132,8 @@
                                 const dy = n1.y - n2.y;
                                 const distSq = dx * dx + dy * dy || 1;
                                 
-                                // Increase repulsion power based on the text width of both nodes
-                                const combinedWidth = n1.width + n2.width;
-                                const force = (2000 + (combinedWidth * 10)) / distSq; 
+                                const combinedSize = n1.width + n2.width;
+                                const force = (2500 + (combinedSize * 15)) / distSq; 
                                 
                                 const dist = Math.sqrt(distSq);
                                 const fx = (dx / dist) * force;
@@ -147,7 +146,7 @@
                             }
                         }
 
-                        // 2. ATTRACTION (Links - Increased distance for breathing room)
+                        // 2. ATTRACTION (Links)
                         links.forEach(link => {
                             const source = nextNodes.find(n => n.id === link.source);
                             const target = nextNodes.find(n => n.id === link.target);
@@ -157,8 +156,7 @@
                             const dy = target.y - source.y;
                             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
                             
-                            // Increased ideal distance from 160 to 240 to account for wider labels
-                            const force = (dist - 240) * 0.04;
+                            const force = (dist - 250) * 0.04; // Increased distance
                             const fx = (dx / dist) * force;
                             const fy = (dy / dist) * force;
                             
@@ -168,17 +166,17 @@
                             target.vy -= fy;
                         });
 
-                        // 3. COLLISION PREVENTION (Hard buffer)
+                        // 3. COLLISION BUFFER (Push-back logic)
                         nextNodes.forEach(n1 => {
                             nextNodes.forEach(n2 => {
                                 if (n1 === n2) return;
-                                const minBuffer = (n1.width + n2.width) / 2 + 10;
+                                const minBuffer = (n1.width + n2.width) / 2 + 20;
                                 const dx = n1.x - n2.x;
                                 const dy = n1.y - n2.y;
                                 const dist = Math.sqrt(dx * dx + dy * dy) || 1;
                                 
                                 if (dist < minBuffer) {
-                                    const push = (minBuffer - dist) * 0.1;
+                                    const push = (minBuffer - dist) * 0.2;
                                     n1.vx += (dx / dist) * push;
                                     n1.vy += (dy / dist) * push;
                                 }
@@ -192,8 +190,8 @@
                             if (n === dragTarget.current) return;
                             n.vx += (centerX - n.x) * 0.003;
                             n.vy += (centerY - n.y) * 0.003;
-                            n.vx *= 0.85; // Friction
-                            n.vy *= 0.85;
+                            n.vx *= 0.82; // Slightly more friction for stability
+                            n.vy *= 0.82;
                             n.x += n.vx;
                             n.y += n.vy;
                         });
@@ -233,10 +231,8 @@
 
                     nodes.forEach(node => {
                         const isSelected = selectedNode?.id === node.id;
-                        
                         ctx.shadowBlur = (node.depth === 0 || isSelected) ? 15 : 0;
                         ctx.shadowColor = isSelected ? '#60a5fa' : '#3b82f6';
-
                         ctx.fillStyle = '#1e293b';
                         ctx.strokeStyle = isSelected ? '#60a5fa' : '#475569';
                         ctx.lineWidth = isSelected ? 2.5 : 1.5;
@@ -256,15 +252,13 @@
 
                         ctx.shadowBlur = 0;
                         ctx.fillStyle = isSelected ? '#fff' : '#cbd5e1';
-                        ctx.font = '13px "Segoe UI", sans-serif';
+                        ctx.font = '13px sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.fillText(node.id, node.x, node.y);
                     });
-
                     ctx.restore();
                 };
-
                 render();
             }, [nodes, links, selectedNode]);
 
@@ -274,7 +268,6 @@
                 const targetY = ((window.innerHeight - 80) / 2) - (node.y * transform.current.k);
                 transform.current.x = targetX;
                 transform.current.y = targetY;
-
                 if (canAccessParent()) {
                     try { window.parent.location.hash = encodeURIComponent(node.id); } 
                     catch (e) { console.warn("Nav blocked."); }
@@ -285,12 +278,10 @@
                 const rect = canvasRef.current.getBoundingClientRect();
                 const x = (e.clientX - rect.left - transform.current.x) / transform.current.k;
                 const y = (e.clientY - rect.top - transform.current.y) / transform.current.k;
-
                 const clickedNode = nodes.find(n => {
                     const halfW = n.width / 2;
                     return Math.abs(n.x - x) < halfW && Math.abs(n.y - y) < 20;
                 });
-
                 if (clickedNode) {
                     dragTarget.current = clickedNode;
                     selectAndNav(clickedNode);
@@ -324,56 +315,34 @@
                     <header className="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shrink-0 z-20">
                         <div>
                             <h1 className="text-xl font-bold text-blue-400">Finance Knowledge Map</h1>
-                            <p className="text-xs text-slate-400">Smart collision prevention enabled • {nodes.length} concepts mapped</p>
+                            <p className="text-xs text-slate-400">Stable Collision Physics Active • {nodes.length} concepts</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setShowTOC(!showTOC)} className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded border border-slate-500">
-                                {showTOC ? "Hide TOC" : "Show TOC"}
-                            </button>
-                        </div>
+                        <button onClick={() => setShowTOC(!showTOC)} className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded border border-slate-500">
+                            {showTOC ? "Hide TOC" : "Show TOC"}
+                        </button>
                     </header>
-
                     <main className="relative flex-grow flex overflow-hidden">
-                        <canvas
-                            ref={canvasRef}
-                            width={window.innerWidth}
-                            height={window.innerHeight - 80}
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseUp}
-                            className="w-full h-full cursor-grab active:cursor-grabbing"
-                        />
-
+                        <canvas ref={canvasRef} width={window.innerWidth} height={window.innerHeight - 80} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} className="w-full h-full cursor-grab active:cursor-grabbing" />
                         {showTOC && (
                             <div className="absolute right-6 top-6 bottom-6 w-64 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-2xl flex flex-col z-10">
-                                <div className="p-4 border-b border-slate-700">
-                                    <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Concepts</h3>
-                                </div>
+                                <div className="p-4 border-b border-slate-700"><h3 className="text-sm font-bold text-slate-300">Concepts</h3></div>
                                 <div className="flex-grow overflow-y-auto p-2 custom-scrollbar">
                                     {sortedNodes.map(node => (
-                                        <div 
-                                            key={node.id}
-                                            onClick={() => selectAndNav(node)}
-                                            className={`p-2 mb-1 text-xs rounded cursor-pointer transition-colors flex items-center gap-2 ${selectedNode?.id === node.id ? 'bg-blue-600/20 text-blue-300 border-l-2 border-blue-500' : 'hover:bg-slate-800 text-slate-400'}`}
-                                        >
-                                            <span className="opacity-30">•</span>
+                                        <div key={node.id} onClick={() => selectAndNav(node)} className={`p-2 mb-1 text-xs rounded cursor-pointer transition-colors ${selectedNode?.id === node.id ? 'bg-blue-600/20 text-blue-300 border-l-2 border-blue-500' : 'hover:bg-slate-800 text-slate-400'}`}>
                                             {node.id}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
-
                         <div className="absolute bottom-6 left-6 flex flex-col gap-2">
-                            <button onClick={() => transform.current.k *= 1.2} className="w-10 h-10 bg-slate-800/80 hover:bg-slate-700 rounded-full border border-slate-600 flex items-center justify-center shadow-lg">+</button>
-                            <button onClick={() => transform.current.k /= 1.2} className="w-10 h-10 bg-slate-800/80 hover:bg-slate-700 rounded-full border border-slate-600 flex items-center justify-center shadow-lg">-</button>
+                            <button onClick={() => transform.current.k *= 1.2} className="w-10 h-10 bg-slate-800/80 rounded-full border border-slate-600 flex items-center justify-center shadow-lg">+</button>
+                            <button onClick={() => transform.current.k /= 1.2} className="w-10 h-10 bg-slate-800/80 rounded-full border border-slate-600 flex items-center justify-center shadow-lg">-</button>
                         </div>
                     </main>
                 </div>
             );
         };
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
