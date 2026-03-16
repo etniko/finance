@@ -56,14 +56,41 @@
   #main {
     flex: 1; overflow-y: auto; padding: 30px 40px 40px;
   }
-  #main h1 {
-    font-size: 1.5rem; margin-bottom: 6px; color: #7ecaca;
-    font-weight: 400;
-    margin-left: 45px; /* Offset to clear the fixed toggle button */
+  
+  .header-container {
+    display: flex;
+    align-items: center;
+    margin-left: 45px;
+    margin-bottom: 6px;
   }
+
+  #main h1 {
+    font-size: 1.5rem; color: #7ecaca;
+    font-weight: 400;
+  }
+
+  .nav-back-btn {
+    display: inline-block;
+    margin-right: 15px;
+  }
+
+  .nav-back-btn a {
+    text-decoration: none;
+    color: white;
+    background-color: #4c566a;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+
+  .nav-back-btn a:hover {
+    background-color: #5e81ac;
+  }
+
   #main > p.subtitle {
     font-size: 0.83rem; color: #6b7a8a; margin-bottom: 28px;
-    margin-left: 45px; /* Keep alignment with the title */
+    margin-left: 45px;
   }
 
   /* ── Section cards ── */
@@ -124,7 +151,12 @@
 </div>
 
 <div id="main">
-  <h1>Factors Affecting Transaction Price</h1>
+  <div class="header-container">
+    <div class="nav-back-btn">
+      <a href="https://etniko.github.io/finance/index">Index</a>
+    </div>
+    <h1>Factors Affecting Transaction Price</h1>
+  </div>
   <p class="subtitle">Analysis of how each factor impacts the purchase price in the Energy / First Buy acquisition scenario.</p>
 
   <!-- ALL -->
