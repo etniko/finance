@@ -136,13 +136,6 @@
   }
   .edit-btn:hover { color: #7ecaca; background: #3b4252; }
 
-  .badge {
-    padding: 3px 11px; border-radius: 20px;
-    font-size: 0.73rem; font-weight: 700; letter-spacing: 0.5px;
-  }
-  .badge.decrease { background: #3d2020; color: #bf6060; border: 1px solid #7a3535; }
-  .badge.increase { background: #1e3428; color: #5a9e78; border: 1px solid #2e6045; }
-  .badge.mixed    { background: #3a3010; color: #b0903a; border: 1px solid #6a5520; }
   .card p { font-size: 0.86rem; color: #9aacb8; line-height: 1.65; }
 
   /* ── Summary table ── */
@@ -152,9 +145,6 @@
   td { padding: 11px 14px; font-size: 0.86rem; border-bottom: 1px solid #3b4252; color: #9aacb8; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: #2e3747; }
-  .td-decrease { color: #bf6060; font-weight: 600; }
-  .td-increase { color: #5a9e78; font-weight: 600; }
-  .td-mixed    { color: #b0903a; font-weight: 600; }
 
   /* ── About ── */
   .about-box { background: #2a3040; border: 1px solid #3b4252; border-radius: 6px; padding: 26px; line-height: 1.7; font-size: 0.88rem; color: #9aacb8; }
@@ -192,7 +182,7 @@
   #modal h2 { font-size: 1.1rem; color: #7ecaca; margin-bottom: 20px; font-weight: 500; }
   .form-group { margin-bottom: 16px; }
   .form-group label { display: block; font-size: 0.8rem; color: #81a1c1; margin-bottom: 6px; }
-  .form-group input, .form-group textarea, .form-group select {
+  .form-group input, .form-group textarea {
     width: 100%;
     background: #3b4252;
     border: 1px solid #4c566a;
@@ -202,7 +192,7 @@
     font-family: inherit;
     font-size: 0.9rem;
   }
-  .form-group textarea { height: 100px; resize: vertical; }
+  .form-group textarea { height: 120px; resize: vertical; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
   .btn-secondary { background: #4c566a; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
 </style>
@@ -215,12 +205,7 @@
   <h2>Navigation</h2>
   <nav id="sidebar-nav">
     <a href="#" class="active" onclick="showSection('all', this)">All Terms</a>
-    <a href="#" onclick="showSection('no-compulsion', this)">No Compulsion</a>
-    <a href="#" onclick="showSection('negotiating', this)">Negotiating Abilities</a>
-    <a href="#" onclick="showSection('restricted', this)">Restricted Market</a>
-    <a href="#" onclick="showSection('full-knowledge', this)">Full Knowledge</a>
-    <a href="#" onclick="showSection('informed', this)">Informed Parties</a>
-    <a href="#" onclick="showSection('non-cash', this)">Non-Cash Terms</a>
+    <!-- Dynamic links inserted here -->
     <a href="#" onclick="showSection('summary', this)">Summary Table</a>
     <a href="#" onclick="showSection('about', this)">About</a>
   </nav>
@@ -236,18 +221,18 @@
     </div>
     <button class="btn-primary" onclick="openModal()">+ Add Term</button>
   </div>
-  <p class="subtitle">Analysis of how each factor impacts the purchase price in the Energy / First Buy acquisition scenario.</p>
+  <p class="subtitle">Detailed definitions of key concepts in business valuation and fair market value premises.</p>
 
   <div id="content-area">
     <!-- Sections will be rendered here by JS -->
   </div>
 
-  <!-- Summary Table (Static structure, content updated by JS) -->
+  <!-- Summary Table Section -->
   <div id="section-summary" class="section">
     <div class="card" style="padding:0; overflow:hidden;">
       <table id="summary-table">
         <thead>
-          <tr><th>Factor</th><th>Key Driver</th><th>Effect on Price</th></tr>
+          <tr><th>Term</th><th>Description Summary</th></tr>
         </thead>
         <tbody id="summary-body">
           <!-- Populated by JS -->
@@ -256,12 +241,12 @@
     </div>
   </div>
 
- <!-- About -->
+ <!-- About Section -->
   <div id="section-about" class="section">
     <div class="about-box">
       <p><strong>About This Tool</strong></p><br>
-      <p>This interactive reference provide key terms relatred to <strong>CBV valuation.</strong><br>
-      <p>Each factor is analyzed under the standard FMV premise conditions: willing buyer, willing seller, no compulsion, full knowledge, and arm's-length transaction. Deviations from these conditions create price adjustments above or below FMV.</p>
+      <p>This interactive reference provides key terms related to <strong>CBV valuation.</strong></p><br>
+      <p>Each factor is analyzed under the standard Fair Market Value (FMV) premise conditions: willing buyer, willing seller, no compulsion, full knowledge, and arm's-length transaction.</p>
     </div>
   </div>
 </div>
@@ -269,40 +254,32 @@
 <!-- Add/Edit Modal -->
 <div id="modal-overlay">
   <div id="modal">
-    <h2 id="modal-title">Add New Factor</h2>
+    <h2 id="modal-title">Add New Term</h2>
     <input type="hidden" id="edit-index">
     <div class="form-group">
-      <label>Factor Name</label>
+      <label>Term Name</label>
       <input type="text" id="factor-name" placeholder="e.g. No Compulsion to Transact">
     </div>
     <div class="form-group">
-      <label>Impact Type</label>
-      <select id="factor-impact">
-        <option value="decrease">Decrease</option>
-        <option value="increase">Increase</option>
-        <option value="mixed">Mixed (Decrease or Increase)</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Description</label>
-      <textarea id="factor-desc" placeholder="Explain the logic behind the impact..."></textarea>
+      <label>Definition / Logic</label>
+      <textarea id="factor-desc" placeholder="Explain the definition or logic..."></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary" onclick="saveFactor()">Save Factor</button>
+      <button class="btn-primary" onclick="saveFactor()">Save Term</button>
     </div>
   </div>
 </div>
 
 <script>
-  // Initial Data
+  // Initial Data (removed impact fields)
   let factors = [
-    { id: 'no-compulsion', name: 'No Compulsion to Transact', impact: 'decrease', desc: 'A business has been losing money and may be in jeopardy of going out of business; thus, it may be a motivated vendor. This compulsion weakens the seller\'s negotiating position, pushing the price down.' },
-    { id: 'negotiating', name: 'Negotiating Abilities', impact: 'decrease', desc: 'A potential buyer has completed many acquisitions, while a seller may be inexperienced. The potential buyer may be a better negotiator, which suggests that the seller should have the negotiations performed by an experienced professional.' },
-    { id: 'restricted', name: 'Restricted Market', impact: 'decrease', desc: 'The business (seller) may be dealing with only one buyer. A restricted market limits competition, removing upward pricing pressure and giving the buyer greater leverage.' },
-    { id: 'full-knowledge', name: 'Full Knowledge', impact: 'mixed', desc: 'A potential buyer is not familiar with the new market (i.e., differing political and economic environments, demographics, and tax legislation). This knowledge gap could cause the buyer to under- or over-value the target.' },
-    { id: 'informed', name: 'Informed / Prudent Parties', impact: 'increase', desc: 'A potential buyer may be very interested in entering the new market. Strong strategic motivation can cause a buyer to pay a premium above fair market value.' },
-    { id: 'non-cash', name: 'Non-Cash Payment Terms', impact: 'increase', desc: 'A potential buyer may pay some of the purchase price in the form of deferred or conditional consideration, rather than paying cash at closing. Non-cash terms often result in a nominally higher stated price.' }
+    { id: 'no-compulsion', name: 'No Compulsion to Transact', desc: 'A business has been losing money and may be in jeopardy of going out of business; thus, it may be a motivated vendor. This compulsion weakens the seller\'s negotiating position.' },
+    { id: 'negotiating', name: 'Negotiating Abilities', desc: 'A potential buyer has completed many acquisitions, while a seller may be inexperienced. The potential buyer may be a better negotiator, suggesting the seller should utilize professional help.' },
+    { id: 'restricted', name: 'Restricted Market', desc: 'The business (seller) may be dealing with only one buyer. A restricted market limits competition, removing upward pricing pressure and giving the buyer greater leverage.' },
+    { id: 'full-knowledge', name: 'Full Knowledge', desc: 'A potential buyer is not familiar with the new market (i.e., differing political and economic environments, demographics, and tax legislation). This knowledge gap impacts valuation accuracy.' },
+    { id: 'informed', name: 'Informed / Prudent Parties', desc: 'A potential buyer may be very interested in entering the new market. Strong strategic motivation can cause a buyer to pay a premium above fair market value.' },
+    { id: 'non-cash', name: 'Non-Cash Payment Terms', desc: 'A potential buyer may pay some of the purchase price in the form of deferred or conditional consideration. Non-cash terms often result in a nominally higher stated price.' }
   ];
 
   let currentSection = 'all';
@@ -312,7 +289,6 @@
     const summaryBody = document.getElementById('summary-body');
     const nav = document.getElementById('sidebar-nav');
     
-    // Clear existing
     container.innerHTML = '';
     summaryBody.innerHTML = '';
     
@@ -322,37 +298,50 @@
     allSection.className = 'section' + (currentSection === 'all' ? ' active' : '');
     container.appendChild(allSection);
 
+    // Filter out static links to rebuild dynamic nav
+    const staticLinks = Array.from(nav.querySelectorAll('a')).filter(a => 
+      a.innerText === 'All Terms' || a.innerText === 'Summary Table' || a.innerText === 'About'
+    );
+    nav.innerHTML = '';
+    nav.appendChild(staticLinks[0]); // All Terms
+
     factors.forEach((f, index) => {
-      const badgeText = f.impact === 'mixed' ? 'Decrease or Increase' : f.impact.charAt(0).toUpperCase() + f.impact.slice(1);
-      
+      // Create Sidebar Link
+      const newLink = document.createElement('a');
+      newLink.href = "#";
+      newLink.className = (currentSection === f.id ? 'active' : '');
+      newLink.onclick = function() { return showSection(f.id, this); };
+      newLink.innerText = f.name;
+      nav.appendChild(newLink);
+
       // Card for "All" section
-      const cardAll = createCard(f, index, badgeText);
+      const cardAll = createCard(f, index);
       allSection.appendChild(cardAll);
 
       // Individual section
       const indivSection = document.createElement('div');
       indivSection.id = 'section-' + f.id;
       indivSection.className = 'section' + (currentSection === f.id ? ' active' : '');
-      indivSection.appendChild(createCard(f, index, badgeText));
+      indivSection.appendChild(createCard(f, index));
       container.appendChild(indivSection);
 
       // Summary Table Row
       const row = document.createElement('tr');
-      const impactClass = 'td-' + f.impact;
       row.innerHTML = `
-        <td>${f.name}</td>
-        <td>${f.desc.substring(0, 50)}...</td>
-        <td class="${impactClass}">${badgeText}</td>
+        <td><strong>${f.name}</strong></td>
+        <td>${f.desc.substring(0, 80)}${f.desc.length > 80 ? '...' : ''}</td>
       `;
       summaryBody.appendChild(row);
     });
 
-    // Ensure summary and about sections keep their active states
+    nav.appendChild(staticLinks[1]); // Summary
+    nav.appendChild(staticLinks[2]); // About
+
     document.getElementById('section-summary').className = 'section' + (currentSection === 'summary' ? ' active' : '');
     document.getElementById('section-about').className = 'section' + (currentSection === 'about' ? ' active' : '');
   }
 
-  function createCard(f, index, badgeText) {
+  function createCard(f, index) {
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
@@ -360,7 +349,6 @@
         <h3>${f.name}</h3>
         <div class="card-actions">
            <button class="edit-btn" onclick="openModal(${index})">Edit</button>
-           <span class="badge ${f.impact}">${badgeText}</span>
         </div>
       </div>
       <p>${f.desc}</p>
@@ -372,14 +360,8 @@
     currentSection = id;
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     
-    if (id === 'all') {
-        document.getElementById('section-all').classList.add('active');
-    } else if (id === 'summary' || id === 'about') {
-        document.getElementById('section-' + id).classList.add('active');
-    } else {
-        const target = document.getElementById('section-' + id);
-        if (target) target.classList.add('active');
-    }
+    const target = document.getElementById('section-' + id);
+    if (target) target.classList.add('active');
 
     document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
     if (el) el.classList.add('active');
@@ -390,7 +372,6 @@
     document.getElementById('sidebar').classList.toggle('collapsed');
   }
 
-  // Modal Logic
   function openModal(index = null) {
     const overlay = document.getElementById('modal-overlay');
     const title = document.getElementById('modal-title');
@@ -398,19 +379,16 @@
     
     if (index !== null) {
       const f = factors[index];
-      title.innerText = 'Edit Factor';
+      title.innerText = 'Edit Term';
       idxInput.value = index;
       document.getElementById('factor-name').value = f.name;
-      document.getElementById('factor-impact').value = f.impact;
       document.getElementById('factor-desc').value = f.desc;
     } else {
-      title.innerText = 'Add New Factor';
+      title.innerText = 'Add New Term';
       idxInput.value = '';
       document.getElementById('factor-name').value = '';
-      document.getElementById('factor-impact').value = 'decrease';
       document.getElementById('factor-desc').value = '';
     }
-    
     overlay.style.display = 'flex';
   }
 
@@ -421,34 +399,22 @@
   function saveFactor() {
     const idx = document.getElementById('edit-index').value;
     const name = document.getElementById('factor-name').value;
-    const impact = document.getElementById('factor-impact').value;
     const desc = document.getElementById('factor-desc').value;
     
-    if (!name || !desc) return alert("Please fill in all fields");
+    if (!name || !desc) return;
 
     if (idx !== '') {
-      // Edit
-      factors[idx] = { ...factors[idx], name, impact, desc };
+      factors[idx].name = name;
+      factors[idx].desc = desc;
     } else {
-      // Add
       const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      factors.push({ id, name, impact, desc });
-      
-      // Add to sidebar
-      const nav = document.getElementById('sidebar-nav');
-      const summaryLink = nav.lastElementChild.previousElementSibling;
-      const newLink = document.createElement('a');
-      newLink.href = "#";
-      newLink.onclick = function() { return showSection(id, this); };
-      newLink.innerText = name;
-      nav.insertBefore(newLink, summaryLink);
+      factors.push({ id, name, desc });
     }
     
     renderContent();
     closeModal();
   }
 
-  // Initial render
   window.onload = renderContent;
 </script>
 </body>
