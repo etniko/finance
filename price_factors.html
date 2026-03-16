@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Valuation – Price Factors</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; height: 100vh; background: #2e3440; color: #c8d0dc; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 240px; min-width: 240px; background: #252b36;
+    display: flex; flex-direction: column;
+    border-right: 1px solid #3b4252;
+    transition: width 0.3s;
+    overflow: hidden;
+  }
+  #sidebar.collapsed { width: 0; min-width: 0; border: none; }
+  #sidebar h2 {
+    padding: 70px 16px 12px;
+    font-size: 0.78rem; text-transform: uppercase;
+    letter-spacing: 1.5px; color: #7ecaca;
+    border-bottom: 1px solid #3b4252;
+  }
+  #sidebar nav a {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 18px;
+    color: #8fbcbb; text-decoration: none;
+    font-size: 0.875rem; border-left: 3px solid transparent;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  #sidebar nav a::before {
+    content: "•"; font-size: 1.1rem; color: #5c7a8a; flex-shrink: 0;
+  }
+  #sidebar nav a:hover,
+  #sidebar nav a.active {
+    background: #2e3747; border-left-color: #7ecaca; color: #c8e6e6;
+  }
+  #sidebar nav a.active::before,
+  #sidebar nav a:hover::before { color: #7ecaca; }
+
+  /* ── Toggle button ── */
+  #toggle-btn {
+    position: fixed; top: 14px; left: 14px; z-index: 100;
+    background: #3b4f5c; border: none; border-radius: 4px;
+    width: 32px; height: 32px; cursor: pointer; font-size: 1rem;
+    color: #7ecaca;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #toggle-btn:hover { background: #4a6070; }
+
+  /* ── Main content ── */
+  #main {
+    flex: 1; overflow-y: auto; padding: 30px 40px 40px;
+  }
+  #main h1 {
+    font-size: 1.5rem; margin-bottom: 6px; color: #7ecaca;
+    font-weight: 400;
+    margin-left: 45px; /* Offset to clear the fixed toggle button */
+  }
+  #main > p.subtitle {
+    font-size: 0.83rem; color: #6b7a8a; margin-bottom: 28px;
+    margin-left: 45px; /* Keep alignment with the title */
+  }
+
+  /* ── Section cards ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card {
+    background: #2a3040; border: 1px solid #3b4252;
+    border-radius: 6px; padding: 20px 24px; margin-bottom: 16px;
+  }
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .card-header h3 { font-size: 0.95rem; color: #c8e0e0; font-weight: 500; }
+  .badge {
+    padding: 3px 11px; border-radius: 20px;
+    font-size: 0.73rem; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .badge.decrease { background: #3d2020; color: #bf6060; border: 1px solid #7a3535; }
+  .badge.increase { background: #1e3428; color: #5a9e78; border: 1px solid #2e6045; }
+  .badge.mixed    { background: #3a3010; color: #b0903a; border: 1px solid #6a5520; }
+  .card p { font-size: 0.86rem; color: #9aacb8; line-height: 1.65; }
+
+  /* ── Summary table ── */
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { background: #252b36; color: #7ecaca; font-size: 0.78rem;
+       text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; }
+  td { padding: 11px 14px; font-size: 0.86rem; border-bottom: 1px solid #3b4252; color: #9aacb8; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #2e3747; }
+  .td-decrease { color: #bf6060; font-weight: 600; }
+  .td-increase { color: #5a9e78; font-weight: 600; }
+  .td-mixed    { color: #b0903a; font-weight: 600; }
+
+  /* ── About ── */
+  .about-box { background: #2a3040; border: 1px solid #3b4252; border-radius: 6px; padding: 26px; line-height: 1.7; font-size: 0.88rem; color: #9aacb8; }
+  .about-box strong { color: #7ecaca; }
+</style>
+</head>
+<body>
+
+<button id="toggle-btn" onclick="toggleSidebar()" title="Toggle menu">☰</button>
+
+<div id="sidebar">
+  <h2>Navigation</h2>
+  <nav>
+    <a href="#" class="active" onclick="showSection('all', this)">All Factors</a>
+    <a href="#" onclick="showSection('no-compulsion', this)">No Compulsion</a>
+    <a href="#" onclick="showSection('negotiating', this)">Negotiating Abilities</a>
+    <a href="#" onclick="showSection('restricted', this)">Restricted Market</a>
+    <a href="#" onclick="showSection('full-knowledge', this)">Full Knowledge</a>
+    <a href="#" onclick="showSection('informed', this)">Informed Parties</a>
+    <a href="#" onclick="showSection('non-cash', this)">Non-Cash Terms</a>
+    <a href="#" onclick="showSection('summary', this)">Summary Table</a>
+    <a href="#" onclick="showSection('about', this)">About</a>
+  </nav>
+</div>
+
+<div id="main">
+  <h1>Factors Affecting Transaction Price</h1>
+  <p class="subtitle">Analysis of how each factor impacts the purchase price in the Energy / First Buy acquisition scenario.</p>
+
+  <!-- ALL -->
+  <div id="section-all" class="section active">
+    <div class="card">
+      <div class="card-header"><h3>No Compulsion to Transact</h3><span class="badge decrease">Decrease</span></div>
+      <p>Energy has been losing money and may be in jeopardy of going out of business; thus, it may be a motivated vendor. This compulsion weakens the seller's negotiating position, pushing the price down.</p>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Negotiating Abilities</h3><span class="badge decrease">Decrease</span></div>
+      <p>First Buy has completed many acquisitions, while Paula may be inexperienced. First Buy may be a better negotiator, which suggests that Paula should have the negotiations performed by an experienced professional.</p>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Restricted Market</h3><span class="badge decrease">Decrease</span></div>
+      <p>Energy may be dealing with only one buyer. A restricted market limits competition, removing upward pricing pressure and giving the buyer greater leverage.</p>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Full Knowledge</h3><span class="badge mixed">Decrease or Increase</span></div>
+      <p>First Buy is not familiar with the Canadian market (i.e., differing political and economic environments, demographics, and tax legislation). This knowledge gap could cause the buyer to under- or over-value the target.</p>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Informed / Prudent Parties</h3><span class="badge increase">Increase</span></div>
+      <p>First Buy may be very interested in entering the Canadian market. Strong strategic motivation can cause a buyer to pay a premium above fair market value.</p>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Non-Cash Payment Terms</h3><span class="badge increase">Increase</span></div>
+      <p>First Buy may pay some of the purchase price in the form of deferred or conditional consideration, rather than paying cash at closing. Non-cash terms often result in a nominally higher stated price.</p>
+    </div>
+  </div>
+
+  <!-- Individual sections -->
+  <div id="section-no-compulsion" class="section">
+    <div class="card">
+      <div class="card-header"><h3>No Compulsion to Transact</h3><span class="badge decrease">Decrease</span></div>
+      <p>Energy has been losing money and may be in jeopardy of going out of business; thus, it may be a <strong>motivated vendor</strong>. A motivated seller typically accepts a lower price to ensure the deal closes, weakening their bargaining position in negotiations.</p>
+    </div>
+  </div>
+
+  <div id="section-negotiating" class="section">
+    <div class="card">
+      <div class="card-header"><h3>Negotiating Abilities</h3><span class="badge decrease">Decrease</span></div>
+      <p>First Buy has completed many acquisitions, while Paula may be inexperienced. First Buy may be a better negotiator. It is recommended that Paula have the negotiations performed by an experienced professional to mitigate this disadvantage.</p>
+    </div>
+  </div>
+
+  <div id="section-restricted" class="section">
+    <div class="card">
+      <div class="card-header"><h3>Restricted Market</h3><span class="badge decrease">Decrease</span></div>
+      <p>Energy may be dealing with only one buyer. When the pool of potential acquirers is limited, there is no competitive tension to drive the price upward, giving First Buy significant leverage in the negotiation.</p>
+    </div>
+  </div>
+
+  <div id="section-full-knowledge" class="section">
+    <div class="card">
+      <div class="card-header"><h3>Full Knowledge</h3><span class="badge mixed">Decrease or Increase</span></div>
+      <p>First Buy is not familiar with the Canadian market — including differing political and economic environments, demographics, and tax legislation. This knowledge asymmetry creates uncertainty: the buyer may undervalue the target (price decrease) or miscalculate synergies, leading to overpayment (price increase).</p>
+    </div>
+  </div>
+
+  <div id="section-informed" class="section">
+    <div class="card">
+      <div class="card-header"><h3>Informed / Prudent Parties</h3><span class="badge increase">Increase</span></div>
+      <p>First Buy may be very interested in entering the Canadian market. A buyer with strong strategic intent often assigns a <strong>strategic premium</strong> to the deal, resulting in a higher purchase price relative to a purely financial buyer with no synergy expectations.</p>
+    </div>
+  </div>
+
+  <div id="section-non-cash" class="section">
+    <div class="card">
+      <div class="card-header"><h3>Non-Cash Payment Terms</h3><span class="badge increase">Increase</span></div>
+      <p>First Buy may pay some of the purchase price in the form of deferred or conditional consideration (e.g., earnouts), rather than paying cash at closing. Sellers often demand a higher nominal price in exchange for accepting the additional credit risk and time value of money associated with non-cash terms.</p>
+    </div>
+  </div>
+
+  <!-- Summary Table -->
+  <div id="section-summary" class="section">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr><th>Factor</th><th>Key Driver</th><th>Effect on Price</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>No Compulsion to Transact</td><td>Energy is a motivated/distressed seller</td><td class="td-decrease">Decrease</td></tr>
+          <tr><td>Negotiating Abilities</td><td>First Buy is a more experienced acquirer</td><td class="td-decrease">Decrease</td></tr>
+          <tr><td>Restricted Market</td><td>Energy may have only one buyer</td><td class="td-decrease">Decrease</td></tr>
+          <tr><td>Full Knowledge</td><td>First Buy unfamiliar with Canadian market</td><td class="td-mixed">Decrease or Increase</td></tr>
+          <tr><td>Informed / Prudent Parties</td><td>First Buy strongly motivated to enter Canada</td><td class="td-increase">Increase</td></tr>
+          <tr><td>Non-Cash Payment Terms</td><td>Deferred/conditional consideration offered</td><td class="td-increase">Increase</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- About -->
+  <div id="section-about" class="section">
+    <div class="about-box">
+      <p><strong>About This Tool</strong></p><br>
+      <p>This interactive reference summarizes the key factors that deviate a transaction price from <strong>Fair Market Value (FMV)</strong> in the context of a business acquisition — specifically the Energy Ltd. / First Buy scenario commonly studied in <strong>CBV (Chartered Business Valuator)</strong> exam preparation materials.</p><br>
+      <p>Each factor is analyzed under the standard FMV premise conditions: willing buyer, willing seller, no compulsion, full knowledge, and arm's-length transaction. Deviations from these conditions create price adjustments above or below FMV.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
+    if (id === 'all') {
+      document.getElementById('section-all').classList.add('active');
+    } else {
+      document.getElementById('section-' + id).classList.add('active');
+    }
+    el.classList.add('active');
+    return false;
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+</script>
+</body>
+</html>
