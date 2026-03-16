@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Valuation – Price Factors</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; height: 100vh; background: #2e3440; color: #c8d0dc; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 240px; min-width: 240px; background: #252b36;
+    display: flex; flex-direction: column;
+    border-right: 1px solid #3b4252;
+    transition: width 0.3s;
+    overflow: hidden;
+  }
+  #sidebar.collapsed { width: 0; min-width: 0; border: none; }
+  #sidebar h2 {
+    padding: 70px 16px 12px;
+    font-size: 0.78rem; text-transform: uppercase;
+    letter-spacing: 1.5px; color: #7ecaca;
+    border-bottom: 1px solid #3b4252;
+  }
+  #sidebar nav a {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 18px;
+    color: #8fbcbb; text-decoration: none;
+    font-size: 0.875rem; border-left: 3px solid transparent;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  #sidebar nav a::before {
+    content: "•"; font-size: 1.1rem; color: #5c7a8a; flex-shrink: 0;
+  }
+  #sidebar nav a:hover,
+  #sidebar nav a.active {
+    background: #2e3747; border-left-color: #7ecaca; color: #c8e6e6;
+  }
+  #sidebar nav a.active::before,
+  #sidebar nav a:hover::before { color: #7ecaca; }
+
+  /* ── Toggle button ── */
+  #toggle-btn {
+    position: fixed; top: 14px; left: 14px; z-index: 100;
+    background: #3b4f5c; border: none; border-radius: 4px;
+    width: 32px; height: 32px; cursor: pointer; font-size: 1rem;
+    color: #7ecaca;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #toggle-btn:hover { background: #4a6070; }
+
+  /* ── Main content ── */
+  #main {
+    flex: 1; overflow-y: auto; padding: 30px 40px 40px;
+    position: relative;
+  }
+  
+  .header-container {
+    display: flex;
+    align-items: center;
+    margin-left: 45px;
+    margin-bottom: 6px;
+    justify-content: space-between;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  #main h1 {
+    font-size: 1.5rem; color: #7ecaca;
+    font-weight: 400;
+  }
+
+  .nav-back-btn {
+    display: inline-block;
+    margin-right: 15px;
+  }
+
+  .nav-back-btn a {
+    text-decoration: none;
+    color: white;
+    background-color: #4c566a;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+
+  .nav-back-btn a:hover {
+    background-color: #5e81ac;
+  }
+
+  #main > p.subtitle {
+    font-size: 0.83rem; color: #6b7a8a; margin-bottom: 28px;
+    margin-left: 45px;
+  }
+
+  /* ── Section cards ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card {
+    background: #2a3040; border: 1px solid #3b4252;
+    border-radius: 6px; padding: 20px 24px; margin-bottom: 16px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #4c566a; }
+  
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .card-header h3 { font-size: 0.95rem; color: #c8e0e0; font-weight: 500; }
+  
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .edit-btn {
+    background: transparent;
+    border: none;
+    color: #4c566a;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .edit-btn:hover { color: #7ecaca; background: #3b4252; }
+
+  .badge {
+    padding: 3px 11px; border-radius: 20px;
+    font-size: 0.73rem; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .badge.decrease { background: #3d2020; color: #bf6060; border: 1px solid #7a3535; }
+  .badge.increase { background: #1e3428; color: #5a9e78; border: 1px solid #2e6045; }
+  .badge.mixed    { background: #3a3010; color: #b0903a; border: 1px solid #6a5520; }
+  .card p { font-size: 0.86rem; color: #9aacb8; line-height: 1.65; }
+
+  /* ── Summary table ── */
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { background: #252b36; color: #7ecaca; font-size: 0.78rem;
+       text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; }
+  td { padding: 11px 14px; font-size: 0.86rem; border-bottom: 1px solid #3b4252; color: #9aacb8; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #2e3747; }
+  .td-decrease { color: #bf6060; font-weight: 600; }
+  .td-increase { color: #5a9e78; font-weight: 600; }
+  .td-mixed    { color: #b0903a; font-weight: 600; }
+
+  /* ── About ── */
+  .about-box { background: #2a3040; border: 1px solid #3b4252; border-radius: 6px; padding: 26px; line-height: 1.7; font-size: 0.88rem; color: #9aacb8; }
+  .about-box strong { color: #7ecaca; }
+
+  /* ── Action Buttons ── */
+  .btn-primary {
+    background: #5e81ac;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: #81a1c1; }
+
+  /* ── Modal ── */
+  #modal-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    justify-content: center; align-items: center;
+  }
+  #modal {
+    background: #2e3440;
+    border: 1px solid #3b4252;
+    border-radius: 8px;
+    width: 90%; max-width: 500px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  }
+  #modal h2 { font-size: 1.1rem; color: #7ecaca; margin-bottom: 20px; font-weight: 500; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 0.8rem; color: #81a1c1; margin-bottom: 6px; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    background: #3b4252;
+    border: 1px solid #4c566a;
+    border-radius: 4px;
+    padding: 10px;
+    color: #c8d0dc;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .form-group textarea { height: 100px; resize: vertical; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .btn-secondary { background: #4c566a; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<button id="toggle-btn" onclick="toggleSidebar()" title="Toggle menu">☰</button>
+
+<div id="sidebar">
+  <h2>Navigation</h2>
+  <nav id="sidebar-nav">
+    <a href="#" class="active" onclick="showSection('all', this)">All Terms</a>
+    <a href="#" onclick="showSection('no-compulsion', this)">No Compulsion</a>
+    <a href="#" onclick="showSection('negotiating', this)">Negotiating Abilities</a>
+    <a href="#" onclick="showSection('restricted', this)">Restricted Market</a>
+    <a href="#" onclick="showSection('full-knowledge', this)">Full Knowledge</a>
+    <a href="#" onclick="showSection('informed', this)">Informed Parties</a>
+    <a href="#" onclick="showSection('non-cash', this)">Non-Cash Terms</a>
+    <a href="#" onclick="showSection('summary', this)">Summary Table</a>
+    <a href="#" onclick="showSection('about', this)">About</a>
+  </nav>
+</div>
+
+<div id="main">
+  <div class="header-container">
+    <div class="header-left">
+        <div class="nav-back-btn">
+          <a href="https://etniko.github.io/finance/index">Index</a>
+        </div>
+        <h1>Valuation Definitions</h1>
+    </div>
+    <button class="btn-primary" onclick="openModal()">+ Add Term</button>
+  </div>
+  <p class="subtitle">Analysis of how each factor impacts the purchase price in the Energy / First Buy acquisition scenario.</p>
+
+  <div id="content-area">
+    <!-- Sections will be rendered here by JS -->
+  </div>
+
+  <!-- Summary Table (Static structure, content updated by JS) -->
+  <div id="section-summary" class="section">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table id="summary-table">
+        <thead>
+          <tr><th>Factor</th><th>Key Driver</th><th>Effect on Price</th></tr>
+        </thead>
+        <tbody id="summary-body">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- About -->
+  <div id="section-about" class="section">
+    <div class="about-box">
+      <p><strong>About This Tool</strong></p><br>
+      <p>This interactive reference summarizes the key factors that deviate a transaction price from <strong>Fair Market Value (FMV)</strong> in the context of a business acquisition — specifically the Energy Ltd. / First Buy scenario commonly studied in <strong>CBV (Chartered Business Valuator)</strong> exam preparation materials.</p><br>
+      <p>Each factor is analyzed under the standard FMV premise conditions: willing buyer, willing seller, no compulsion, full knowledge, and arm's-length transaction. Deviations from these conditions create price adjustments above or below FMV.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title">Add New Factor</h2>
+    <input type="hidden" id="edit-index">
+    <div class="form-group">
+      <label>Factor Name</label>
+      <input type="text" id="factor-name" placeholder="e.g. No Compulsion to Transact">
+    </div>
+    <div class="form-group">
+      <label>Impact Type</label>
+      <select id="factor-impact">
+        <option value="decrease">Decrease</option>
+        <option value="increase">Increase</option>
+        <option value="mixed">Mixed (Decrease or Increase)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="factor-desc" placeholder="Explain the logic behind the impact..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveFactor()">Save Factor</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initial Data
+  let factors = [
+    { id: 'no-compulsion', name: 'No Compulsion to Transact', impact: 'decrease', desc: 'A business has been losing money and may be in jeopardy of going out of business; thus, it may be a motivated vendor. This compulsion weakens the seller\'s negotiating position, pushing the price down.' },
+    { id: 'negotiating', name: 'Negotiating Abilities', impact: 'decrease', desc: 'A potential buyer has completed many acquisitions, while a seller may be inexperienced. The potential buyer may be a better negotiator, which suggests that the seller should have the negotiations performed by an experienced professional.' },
+    { id: 'restricted', name: 'Restricted Market', impact: 'decrease', desc: 'The business (seller) may be dealing with only one buyer. A restricted market limits competition, removing upward pricing pressure and giving the buyer greater leverage.' },
+    { id: 'full-knowledge', name: 'Full Knowledge', impact: 'mixed', desc: 'A potential buyer is not familiar with the new market (i.e., differing political and economic environments, demographics, and tax legislation). This knowledge gap could cause the buyer to under- or over-value the target.' },
+    { id: 'informed', name: 'Informed / Prudent Parties', impact: 'increase', desc: 'A potential buyer may be very interested in entering the new market. Strong strategic motivation can cause a buyer to pay a premium above fair market value.' },
+    { id: 'non-cash', name: 'Non-Cash Payment Terms', impact: 'increase', desc: 'A potential buyer may pay some of the purchase price in the form of deferred or conditional consideration, rather than paying cash at closing. Non-cash terms often result in a nominally higher stated price.' }
+  ];
+
+  let currentSection = 'all';
+
+  function renderContent() {
+    const container = document.getElementById('content-area');
+    const summaryBody = document.getElementById('summary-body');
+    const nav = document.getElementById('sidebar-nav');
+    
+    // Clear existing
+    container.innerHTML = '';
+    summaryBody.innerHTML = '';
+    
+    // Create "All" section container
+    const allSection = document.createElement('div');
+    allSection.id = 'section-all';
+    allSection.className = 'section' + (currentSection === 'all' ? ' active' : '');
+    container.appendChild(allSection);
+
+    factors.forEach((f, index) => {
+      const badgeText = f.impact === 'mixed' ? 'Decrease or Increase' : f.impact.charAt(0).toUpperCase() + f.impact.slice(1);
+      
+      // Card for "All" section
+      const cardAll = createCard(f, index, badgeText);
+      allSection.appendChild(cardAll);
+
+      // Individual section
+      const indivSection = document.createElement('div');
+      indivSection.id = 'section-' + f.id;
+      indivSection.className = 'section' + (currentSection === f.id ? ' active' : '');
+      indivSection.appendChild(createCard(f, index, badgeText));
+      container.appendChild(indivSection);
+
+      // Summary Table Row
+      const row = document.createElement('tr');
+      const impactClass = 'td-' + f.impact;
+      row.innerHTML = `
+        <td>${f.name}</td>
+        <td>${f.desc.substring(0, 50)}...</td>
+        <td class="${impactClass}">${badgeText}</td>
+      `;
+      summaryBody.appendChild(row);
+    });
+
+    // Ensure summary and about sections keep their active states
+    document.getElementById('section-summary').className = 'section' + (currentSection === 'summary' ? ' active' : '');
+    document.getElementById('section-about').className = 'section' + (currentSection === 'about' ? ' active' : '');
+  }
+
+  function createCard(f, index, badgeText) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-header">
+        <h3>${f.name}</h3>
+        <div class="card-actions">
+           <button class="edit-btn" onclick="openModal(${index})">Edit</button>
+           <span class="badge ${f.impact}">${badgeText}</span>
+        </div>
+      </div>
+      <p>${f.desc}</p>
+    `;
+    return card;
+  }
+
+  function showSection(id, el) {
+    currentSection = id;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    
+    if (id === 'all') {
+        document.getElementById('section-all').classList.add('active');
+    } else if (id === 'summary' || id === 'about') {
+        document.getElementById('section-' + id).classList.add('active');
+    } else {
+        const target = document.getElementById('section-' + id);
+        if (target) target.classList.add('active');
+    }
+
+    document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
+    if (el) el.classList.add('active');
+    return false;
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+
+  // Modal Logic
+  function openModal(index = null) {
+    const overlay = document.getElementById('modal-overlay');
+    const title = document.getElementById('modal-title');
+    const idxInput = document.getElementById('edit-index');
+    
+    if (index !== null) {
+      const f = factors[index];
+      title.innerText = 'Edit Factor';
+      idxInput.value = index;
+      document.getElementById('factor-name').value = f.name;
+      document.getElementById('factor-impact').value = f.impact;
+      document.getElementById('factor-desc').value = f.desc;
+    } else {
+      title.innerText = 'Add New Factor';
+      idxInput.value = '';
+      document.getElementById('factor-name').value = '';
+      document.getElementById('factor-impact').value = 'decrease';
+      document.getElementById('factor-desc').value = '';
+    }
+    
+    overlay.style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').style.display = 'none';
+  }
+
+  function saveFactor() {
+    const idx = document.getElementById('edit-index').value;
+    const name = document.getElementById('factor-name').value;
+    const impact = document.getElementById('factor-impact').value;
+    const desc = document.getElementById('factor-desc').value;
+    
+    if (!name || !desc) return alert("Please fill in all fields");
+
+    if (idx !== '') {
+      // Edit
+      factors[idx] = { ...factors[idx], name, impact, desc };
+    } else {
+      // Add
+      const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      factors.push({ id, name, impact, desc });
+      
+      // Add to sidebar
+      const nav = document.getElementById('sidebar-nav');
+      const summaryLink = nav.lastElementChild.previousElementSibling;
+      const newLink = document.createElement('a');
+      newLink.href = "#";
+      newLink.onclick = function() { return showSection(id, this); };
+      newLink.innerText = name;
+      nav.insertBefore(newLink, summaryLink);
+    }
+    
+    renderContent();
+    closeModal();
+  }
+
+  // Initial render
+  window.onload = renderContent;
+</script>
+</body>
+</html>
