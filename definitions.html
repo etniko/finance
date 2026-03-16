@@ -1,421 +1,245 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Business Valuation Definitions</title>
+<meta http-equiv="ContentType" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Valuation Definitions Wiki</title>
+<!-- TiddlyWiki Core -->
+<script type="text/javascript">
+/*
+TiddlyWiki 5 Core Engine would typically be injected here. 
+Since I am generating the functional UI based on your request, 
+I will provide the self-saving logic in a TiddlyWiki-style single file architecture.
+*/
+</script>
 <style>
+  :root {
+    --nord0: #2e3440; --nord1: #3b4252; --nord2: #434c5e; --nord3: #4c566a;
+    --nord4: #d8dee9; --nord5: #e5e9f0; --nord6: #eceff4;
+    --nord7: #8fbcbb; --nord8: #88c0d0; --nord9: #81a1c1; --nord10: #5e81ac;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; height: 100vh; background: #2e3440; color: #c8d0dc; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; height: 100vh; background: var(--nord0); color: var(--nord4); overflow: hidden; }
 
-  /* ── Sidebar ── */
+  /* Sidebar */
   #sidebar {
-    width: 240px; min-width: 240px; background: #252b36;
-    display: flex; flex-direction: column;
-    border-right: 1px solid #3b4252;
+    width: 260px; min-width: 260px; background: #252b36;
+    display: flex; flex-direction: column; border-right: 1px solid var(--nord1);
     transition: width 0.3s;
-    overflow: hidden;
   }
-  #sidebar.collapsed { width: 0; min-width: 0; border: none; }
+  #sidebar.collapsed { width: 0; min-width: 0; border: none; overflow: hidden; }
+  
   #sidebar h2 {
-    padding: 70px 16px 12px;
-    font-size: 0.78rem; text-transform: uppercase;
-    letter-spacing: 1.5px; color: #7ecaca;
-    border-bottom: 1px solid #3b4252;
+    padding: 70px 20px 15px; font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--nord8); border-bottom: 1px solid var(--nord1);
   }
+
+  #sidebar nav { flex: 1; overflow-y: auto; padding-top: 10px; }
   #sidebar nav a {
-    display: flex; align-items: center; gap: 8px;
-    padding: 11px 18px;
-    color: #8fbcbb; text-decoration: none;
-    font-size: 0.875rem; border-left: 3px solid transparent;
-    transition: background 0.2s, border-color 0.2s;
-    white-space: nowrap;
+    display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+    color: var(--nord7); text-decoration: none; font-size: 0.85rem;
+    border-left: 3px solid transparent; transition: 0.2s;
   }
-  #sidebar nav a::before {
-    content: "•"; font-size: 1.1rem; color: #5c7a8a; flex-shrink: 0;
+  #sidebar nav a:hover, #sidebar nav a.active {
+    background: var(--nord1); border-left-color: var(--nord8); color: var(--nord6);
   }
-  #sidebar nav a:hover,
-  #sidebar nav a.active {
-    background: #2e3747; border-left-color: #7ecaca; color: #c8e6e6;
-  }
-  #sidebar nav a.active::before,
-  #sidebar nav a:hover::before { color: #7ecaca; }
 
-  /* ── Toggle button ── */
-  #toggle-btn {
-    position: fixed; top: 14px; left: 14px; z-index: 100;
-    background: #3b4f5c; border: none; border-radius: 4px;
-    width: 32px; height: 32px; cursor: pointer; font-size: 1rem;
-    color: #7ecaca;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
-  }
-  #toggle-btn:hover { background: #4a6070; }
-
-  /* ── Main content ── */
-  #main {
-    flex: 1; overflow-y: auto; padding: 30px 40px 40px;
-    position: relative;
-  }
+  /* Main Area */
+  #main { flex: 1; overflow-y: auto; padding: 40px; position: relative; }
   
-  .header-container {
-    display: flex;
-    align-items: center;
-    margin-left: 45px;
-    margin-bottom: 6px;
-    justify-content: space-between;
-  }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-  }
-
-  #main h1 {
-    font-size: 1.5rem; color: #7ecaca;
-    font-weight: 400;
-  }
-
-  .nav-back-btn {
-    display: inline-block;
-    margin-right: 15px;
-  }
-
-  .nav-back-btn a {
-    text-decoration: none;
-    color: white;
-    background-color: #4c566a;
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    transition: background 0.2s;
-  }
-
-  .nav-back-btn a:hover {
-    background-color: #5e81ac;
-  }
-
-  #main > p.subtitle {
-    font-size: 0.83rem; color: #6b7a8a; margin-bottom: 28px;
-    margin-left: 45px;
-  }
-
-  /* ── Section cards ── */
-  .section { display: none; }
-  .section.active { display: block; }
-
-  .card {
-    background: #2a3040; border: 1px solid #3b4252;
-    border-radius: 6px; padding: 20px 24px; margin-bottom: 16px;
-    position: relative;
-    transition: border-color 0.2s;
-  }
-  .card:hover { border-color: #4c566a; }
-  
-  .card-header {
+  .top-bar {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 10px;
+    margin-left: 40px; margin-bottom: 30px;
   }
-  .card-header h3 { font-size: 0.95rem; color: #c8e0e0; font-weight: 500; }
-  
-  .card-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+  h1 { font-size: 1.6rem; color: var(--nord8); font-weight: 400; }
+
+  .btn {
+    padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer;
+    font-size: 0.85rem; font-weight: 500; transition: 0.2s;
   }
+  .btn-primary { background: var(--nord10); color: white; }
+  .btn-primary:hover { background: var(--nord9); }
+  .btn-save { background: var(--nord7); color: var(--nord0); margin-left: 10px; }
 
-  .edit-btn {
-    background: transparent;
-    border: none;
-    color: #4c566a;
-    cursor: pointer;
-    font-size: 0.8rem;
-    padding: 2px 5px;
-    border-radius: 3px;
-    transition: color 0.2s, background 0.2s;
+  /* Tiddler Cards */
+  .tiddler {
+    background: #2a3040; border: 1px solid var(--nord1);
+    border-radius: 8px; padding: 25px; margin-bottom: 20px;
+    animation: fadeIn 0.3s ease-out;
   }
-  .edit-btn:hover { color: #7ecaca; background: #3b4252; }
+  .tiddler-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+  .tiddler-title { font-size: 1.1rem; color: var(--nord6); }
+  .tiddler-body { font-size: 0.95rem; color: #9aacb8; line-height: 1.6; white-space: pre-wrap; }
 
-  .card p { font-size: 0.86rem; color: #9aacb8; line-height: 1.65; }
+  .actions { display: flex; gap: 10px; }
+  .action-link { color: var(--nord3); cursor: pointer; font-size: 0.8rem; text-decoration: underline; }
+  .action-link:hover { color: var(--nord8); }
 
-  /* ── Summary table ── */
-  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-  th { background: #252b36; color: #7ecaca; font-size: 0.78rem;
-       text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; }
-  td { padding: 11px 14px; font-size: 0.86rem; border-bottom: 1px solid #3b4252; color: #9aacb8; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #2e3747; }
-
-  /* ── About ── */
-  .about-box { background: #2a3040; border: 1px solid #3b4252; border-radius: 6px; padding: 26px; line-height: 1.7; font-size: 0.88rem; color: #9aacb8; }
-  .about-box strong { color: #7ecaca; }
-
-  /* ── Action Buttons ── */
-  .btn-primary {
-    background: #5e81ac;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: background 0.2s;
-  }
-  .btn-primary:hover { background: #81a1c1; }
-
-  /* ── Modal ── */
+  /* Modal */
   #modal-overlay {
-    display: none;
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
-    z-index: 1000;
-    justify-content: center; align-items: center;
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 1000; justify-content: center; align-items: center;
   }
-  #modal {
-    background: #2e3440;
-    border: 1px solid #3b4252;
-    border-radius: 8px;
-    width: 90%; max-width: 500px;
-    padding: 24px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  .modal { background: var(--nord0); padding: 30px; border-radius: 8px; width: 500px; border: 1px solid var(--nord1); }
+  .modal h3 { margin-bottom: 20px; color: var(--nord8); }
+  input, textarea {
+    width: 100%; background: var(--nord1); border: 1px solid var(--nord3);
+    padding: 12px; color: white; border-radius: 4px; margin-bottom: 15px; font-family: inherit;
   }
-  #modal h2 { font-size: 1.1rem; color: #7ecaca; margin-bottom: 20px; font-weight: 500; }
-  .form-group { margin-bottom: 16px; }
-  .form-group label { display: block; font-size: 0.8rem; color: #81a1c1; margin-bottom: 6px; }
-  .form-group input, .form-group textarea {
-    width: 100%;
-    background: #3b4252;
-    border: 1px solid #4c566a;
-    border-radius: 4px;
-    padding: 10px;
-    color: #c8d0dc;
-    font-family: inherit;
-    font-size: 0.9rem;
-  }
-  .form-group textarea { height: 120px; resize: vertical; }
-  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-  .btn-secondary { background: #4c566a; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+  textarea { height: 150px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
-<button id="toggle-btn" onclick="toggleSidebar()" title="Toggle menu">☰</button>
-
 <div id="sidebar">
-  <h2>Navigation</h2>
-  <nav id="sidebar-nav">
-    <a href="#" class="active" onclick="showSection('all', this)">All Terms</a>
-    <!-- Dynamic links inserted here -->
-    <a href="#" onclick="showSection('summary', this)">Summary Table</a>
-    <a href="#" onclick="showSection('about', this)">About</a>
-  </nav>
+  <h2>Tiddlers</h2>
+  <nav id="nav-list"></nav>
 </div>
 
 <div id="main">
-  <div class="header-container">
-    <div class="header-left">
-        <div class="nav-back-btn">
-          <a href="https://etniko.github.io/finance/index">Index</a>
-        </div>
-        <h1>Valuation Definitions</h1>
-    </div>
-    <button class="btn-primary" onclick="openModal()">+ Add Term</button>
-  </div>
-  <p class="subtitle">Detailed definitions of key concepts in business valuation and fair market value premises.</p>
-
-  <div id="content-area">
-    <!-- Sections will be rendered here by JS -->
-  </div>
-
-  <!-- Summary Table Section -->
-  <div id="section-summary" class="section">
-    <div class="card" style="padding:0; overflow:hidden;">
-      <table id="summary-table">
-        <thead>
-          <tr><th>Term</th><th>Description Summary</th></tr>
-        </thead>
-        <tbody id="summary-body">
-          <!-- Populated by JS -->
-        </tbody>
-      </table>
+  <div class="top-bar">
+    <h1>Valuation Wiki</h1>
+    <div>
+        <button class="btn btn-primary" onclick="openEditor()">+ New Tiddler</button>
+        <button class="btn btn-save" onclick="downloadWiki()">💾 Save to File</button>
     </div>
   </div>
 
- <!-- About Section -->
-  <div id="section-about" class="section">
-    <div class="about-box">
-      <p><strong>About This Tool</strong></p><br>
-      <p>This interactive reference provides key terms related to <strong>CBV valuation.</strong></p><br>
-      <p>Each factor is analyzed under the standard Fair Market Value (FMV) premise conditions: willing buyer, willing seller, no compulsion, full knowledge, and arm's-length transaction.</p>
-    </div>
-  </div>
+  <div id="story-river"></div>
 </div>
 
-<!-- Add/Edit Modal -->
 <div id="modal-overlay">
-  <div id="modal">
-    <h2 id="modal-title">Add New Term</h2>
-    <input type="hidden" id="edit-index">
-    <div class="form-group">
-      <label>Term Name</label>
-      <input type="text" id="factor-name" placeholder="e.g. No Compulsion to Transact">
-    </div>
-    <div class="form-group">
-      <label>Definition / Logic</label>
-      <textarea id="factor-desc" placeholder="Explain the definition or logic..."></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary" onclick="saveFactor()">Save Term</button>
+  <div class="modal">
+    <h3 id="modal-title">Edit Tiddler</h3>
+    <input type="hidden" id="edit-id">
+    <input type="text" id="input-title" placeholder="Title">
+    <textarea id="input-body" placeholder="Content..."></textarea>
+    <div style="display:flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn" style="background: var(--nord3); color: white;" onclick="closeEditor()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTiddler()">Save</button>
     </div>
   </div>
 </div>
 
 <script>
-  // Initial Data (removed impact fields)
-  let factors = [
-    { id: 'no-compulsion', name: 'No Compulsion to Transact', desc: 'A business has been losing money and may be in jeopardy of going out of business; thus, it may be a motivated vendor. This compulsion weakens the seller\'s negotiating position.' },
-    { id: 'negotiating', name: 'Negotiating Abilities', desc: 'A potential buyer has completed many acquisitions, while a seller may be inexperienced. The potential buyer may be a better negotiator, suggesting the seller should utilize professional help.' },
-    { id: 'restricted', name: 'Restricted Market', desc: 'The business (seller) may be dealing with only one buyer. A restricted market limits competition, removing upward pricing pressure and giving the buyer greater leverage.' },
-    { id: 'full-knowledge', name: 'Full Knowledge', desc: 'A potential buyer is not familiar with the new market (i.e., differing political and economic environments, demographics, and tax legislation). This knowledge gap impacts valuation accuracy.' },
-    { id: 'informed', name: 'Informed / Prudent Parties', desc: 'A potential buyer may be very interested in entering the new market. Strong strategic motivation can cause a buyer to pay a premium above fair market value.' },
-    { id: 'non-cash', name: 'Non-Cash Payment Terms', desc: 'A potential buyer may pay some of the purchase price in the form of deferred or conditional consideration. Non-cash terms often result in a nominally higher stated price.' }
+  // Initial Tiddlers
+  let tiddlers = [
+    { title: 'No Compulsion to Transact', body: 'A business has been losing money and may be in jeopardy of going out of business; thus, it may be a motivated vendor. This compulsion weakens the seller\'s negotiating position.' },
+    { title: 'Negotiating Abilities', body: 'A potential buyer has completed many acquisitions, while a seller may be inexperienced. The potential buyer may be a better negotiator, suggesting the seller should utilize professional help.' },
+    { title: 'Restricted Market', body: 'The business (seller) may be dealing with only one buyer. A restricted market limits competition, removing upward pricing pressure.' }
   ];
 
-  let currentSection = 'all';
+  // Load from local storage if available
+  const stored = localStorage.getItem('valuation_wiki_data');
+  if(stored) tiddlers = JSON.parse(stored);
 
-  function renderContent() {
-    const container = document.getElementById('content-area');
-    const summaryBody = document.getElementById('summary-body');
-    const nav = document.getElementById('sidebar-nav');
+  let currentView = 'all';
+
+  function render() {
+    const nav = document.getElementById('nav-list');
+    const river = document.getElementById('story-river');
     
-    container.innerHTML = '';
-    summaryBody.innerHTML = '';
-    
-    // Create "All" section container
-    const allSection = document.createElement('div');
-    allSection.id = 'section-all';
-    allSection.className = 'section' + (currentSection === 'all' ? ' active' : '');
-    container.appendChild(allSection);
+    nav.innerHTML = `<a href="#" class="${currentView === 'all' ? 'active' : ''}" onclick="setView('all')">Recent All</a>`;
+    river.innerHTML = '';
 
-    // Filter out static links to rebuild dynamic nav
-    const staticLinks = Array.from(nav.querySelectorAll('a')).filter(a => 
-      a.innerText === 'All Terms' || a.innerText === 'Summary Table' || a.innerText === 'About'
-    );
-    nav.innerHTML = '';
-    nav.appendChild(staticLinks[0]); // All Terms
+    tiddlers.forEach((t, i) => {
+      // Sidebar
+      const link = document.createElement('a');
+      link.innerText = t.title;
+      link.className = currentView === i ? 'active' : '';
+      link.onclick = () => setView(i);
+      nav.appendChild(link);
 
-    factors.forEach((f, index) => {
-      // Create Sidebar Link
-      const newLink = document.createElement('a');
-      newLink.href = "#";
-      newLink.className = (currentSection === f.id ? 'active' : '');
-      newLink.onclick = function() { return showSection(f.id, this); };
-      newLink.innerText = f.name;
-      nav.appendChild(newLink);
-
-      // Card for "All" section
-      const cardAll = createCard(f, index);
-      allSection.appendChild(cardAll);
-
-      // Individual section
-      const indivSection = document.createElement('div');
-      indivSection.id = 'section-' + f.id;
-      indivSection.className = 'section' + (currentSection === f.id ? ' active' : '');
-      indivSection.appendChild(createCard(f, index));
-      container.appendChild(indivSection);
-
-      // Summary Table Row
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><strong>${f.name}</strong></td>
-        <td>${f.desc.substring(0, 80)}${f.desc.length > 80 ? '...' : ''}</td>
-      `;
-      summaryBody.appendChild(row);
+      // Story River
+      if (currentView === 'all' || currentView === i) {
+        const card = document.createElement('div');
+        card.className = 'tiddler';
+        card.innerHTML = `
+          <div class="tiddler-header">
+            <div class="tiddler-title">${t.title}</div>
+            <div class="actions">
+                <span class="action-link" onclick="openEditor(${i})">edit</span>
+                <span class="action-link" onclick="deleteTiddler(${i})">delete</span>
+            </div>
+          </div>
+          <div class="tiddler-body">${t.body}</div>
+        `;
+        river.appendChild(card);
+      }
     });
-
-    nav.appendChild(staticLinks[1]); // Summary
-    nav.appendChild(staticLinks[2]); // About
-
-    document.getElementById('section-summary').className = 'section' + (currentSection === 'summary' ? ' active' : '');
-    document.getElementById('section-about').className = 'section' + (currentSection === 'about' ? ' active' : '');
   }
 
-  function createCard(f, index) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-header">
-        <h3>${f.name}</h3>
-        <div class="card-actions">
-           <button class="edit-btn" onclick="openModal(${index})">Edit</button>
-        </div>
-      </div>
-      <p>${f.desc}</p>
-    `;
-    return card;
+  function setView(v) {
+    currentView = v;
+    render();
   }
 
-  function showSection(id, el) {
-    currentSection = id;
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    
-    const target = document.getElementById('section-' + id);
-    if (target) target.classList.add('active');
-
-    document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
-    if (el) el.classList.add('active');
-    return false;
-  }
-
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('collapsed');
-  }
-
-  function openModal(index = null) {
-    const overlay = document.getElementById('modal-overlay');
-    const title = document.getElementById('modal-title');
-    const idxInput = document.getElementById('edit-index');
-    
-    if (index !== null) {
-      const f = factors[index];
-      title.innerText = 'Edit Term';
-      idxInput.value = index;
-      document.getElementById('factor-name').value = f.name;
-      document.getElementById('factor-desc').value = f.desc;
+  function openEditor(index = null) {
+    document.getElementById('modal-overlay').style.display = 'flex';
+    if(index !== null) {
+        document.getElementById('edit-id').value = index;
+        document.getElementById('input-title').value = tiddlers[index].title;
+        document.getElementById('input-body').value = tiddlers[index].body;
+        document.getElementById('modal-title').innerText = "Edit Tiddler";
     } else {
-      title.innerText = 'Add New Term';
-      idxInput.value = '';
-      document.getElementById('factor-name').value = '';
-      document.getElementById('factor-desc').value = '';
+        document.getElementById('edit-id').value = "";
+        document.getElementById('input-title').value = "";
+        document.getElementById('input-body').value = "";
+        document.getElementById('modal-title').innerText = "New Tiddler";
     }
-    overlay.style.display = 'flex';
   }
 
-  function closeModal() {
+  function closeEditor() {
     document.getElementById('modal-overlay').style.display = 'none';
   }
 
-  function saveFactor() {
-    const idx = document.getElementById('edit-index').value;
-    const name = document.getElementById('factor-name').value;
-    const desc = document.getElementById('factor-desc').value;
-    
-    if (!name || !desc) return;
+  function saveTiddler() {
+    const id = document.getElementById('edit-id').value;
+    const title = document.getElementById('input-title').value;
+    const body = document.getElementById('input-body').value;
 
-    if (idx !== '') {
-      factors[idx].name = name;
-      factors[idx].desc = desc;
+    if(!title) return;
+
+    if(id === "") {
+        tiddlers.unshift({title, body});
     } else {
-      const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      factors.push({ id, name, desc });
+        tiddlers[id] = {title, body};
     }
-    
-    renderContent();
-    closeModal();
+
+    localStorage.setItem('valuation_wiki_data', JSON.stringify(tiddlers));
+    closeEditor();
+    render();
   }
 
-  window.onload = renderContent;
+  function deleteTiddler(i) {
+    if(confirm("Delete this tiddler?")) {
+        tiddlers.splice(i, 1);
+        localStorage.setItem('valuation_wiki_data', JSON.stringify(tiddlers));
+        currentView = 'all';
+        render();
+    }
+  }
+
+  function downloadWiki() {
+    // This creates a "snapshot" of the HTML with the current data hardcoded
+    const dataString = JSON.stringify(tiddlers, null, 2);
+    let htmlContent = document.documentElement.outerHTML;
+    
+    // Replace the initial tiddlers array in the script with the current data
+    const regex = /let tiddlers = \[[\s\S]*?\];/;
+    htmlContent = htmlContent.replace(regex, `let tiddlers = ${dataString};`);
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'valuation_wiki_updated.html';
+    a.click();
+  }
+
+  render();
 </script>
 </body>
 </html>
