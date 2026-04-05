@@ -6,6 +6,8 @@
     <title>Dynamic Circular Mindmap</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body { background-color: #0a1628; color: #e2e8f0; }
+
         .node {
             transition: transform 0.2s ease-out;
             position: absolute;
@@ -16,138 +18,261 @@
             color: white;
             font-weight: bold;
             text-align: center;
-            border: 4px solid white;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            border: 3px solid rgba(255,255,255,0.15);
+            box-shadow: 0 0 18px rgba(99,179,255,0.25), 0 4px 15px rgba(0,0,0,0.5);
             user-select: none;
-            /* Ensure nodes are above lines */
-            z-index: 20; 
+            z-index: 20;
             background-clip: padding-box;
+            cursor: grab;
         }
         .node:hover {
-            transform: translate(-50%, -50%) scale(1.1) !important;
+            transform: translate(-50%, -50%) scale(1.08) !important;
+            box-shadow: 0 0 28px rgba(99,179,255,0.5), 0 4px 20px rgba(0,0,0,0.6);
         }
         .connector {
             position: absolute;
-            background: #e2e8f0;
+            background: rgba(99,179,255,0.25);
             height: 2px;
             transform-origin: left center;
-            /* Ensure lines are below nodes */
             z-index: 5;
             pointer-events: none;
         }
         .sidebar-node {
-            border-left: 1px solid #e2e8f0;
+            border-left: 1px solid #1e3a5f;
             margin-left: 0.75rem;
             padding-left: 0.5rem;
         }
+
+        /* Sidebar dark theme */
+        aside {
+            background-color: #0d1f3c;
+            border-right: 1px solid #1e3a5f;
+        }
+        #sidebar-content .node-row:hover {
+            background-color: #1a2f4e;
+        }
+        input.sidebar-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #cbd5e1;
+            width: 100%;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        input.sidebar-input:focus {
+            color: #93c5fd;
+        }
+
+        /* Canvas dark dot grid */
+        #canvas {
+            background-color: #0a1628;
+            background-image: radial-gradient(rgba(99,179,255,0.15) 1px, transparent 1px);
+            background-size: 22px 22px;
+        }
+
+        /* Scrollbar */
+        #sidebar-content::-webkit-scrollbar { width: 5px; }
+        #sidebar-content::-webkit-scrollbar-track { background: #0d1f3c; }
+        #sidebar-content::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 4px; }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 0 12px rgba(59,130,246,0.4); }
+        .btn-secondary {
+            background: #1a2f4e;
+            color: #93c5fd;
+            border: 1px solid #1e3a5f;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background: #1e3a5f; }
+        .btn-save {
+            background: linear-gradient(135deg, #065f46, #047857);
+            color: #6ee7b7;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-save:hover { background: linear-gradient(135deg, #047857, #059669); box-shadow: 0 0 12px rgba(16,185,129,0.35); }
     </style>
 </head>
-<body class="bg-slate-50 font-sans h-screen flex overflow-hidden">
+<body class="font-sans h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-80 bg-white border-r border-slate-200 flex flex-col shadow-xl z-30">
-        <div class="p-6 border-b border-slate-100">
-            <h1 class="text-xl font-bold text-slate-900">MindMap Editor</h1>
-            <p class="text-xs text-slate-500 mt-1">Manage your hierarchy below</p>
+    <aside class="w-80 flex flex-col shadow-2xl z-30">
+        <div class="p-5 border-b border-[#1e3a5f]">
+            <h1 class="text-lg font-bold text-blue-200 tracking-wide">🧠 MindMap Editor</h1>
+            <p class="text-xs text-slate-500 mt-1">Dark mode · Collision-aware layout</p>
         </div>
 
-        <div id="sidebar-content" class="flex-1 overflow-y-auto p-4 space-y-2">
-            <!-- Tree structure injected here -->
+        <div id="sidebar-content" class="flex-1 overflow-y-auto p-4 space-y-1">
+            <!-- Tree injected here -->
         </div>
 
-        <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-2">
-            <button onclick="exportData()" class="bg-indigo-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-indigo-700">Export JSON</button>
-            <button onclick="document.getElementById('import-input').click()" class="bg-white border border-slate-300 py-2 px-3 rounded-lg text-sm font-medium hover:bg-slate-100">Import JSON</button>
+        <div class="p-4 border-t border-[#1e3a5f] grid grid-cols-2 gap-2">
+            <button onclick="exportData()" class="btn-primary">⬇ Export JSON</button>
+            <button onclick="document.getElementById('import-input').click()" class="btn-secondary">⬆ Import JSON</button>
+            <button onclick="saveSnapshot()" class="btn-save col-span-2">💾 Save Snapshot (PNG)</button>
             <input type="file" id="import-input" class="hidden" accept=".json" onchange="importData(event)">
         </div>
     </aside>
 
     <!-- Canvas -->
-    <main id="canvas" class="flex-1 relative overflow-hidden bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]">
-        <div id="mindmap-root" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center">
-            <!-- Mindmap nodes injected here -->
+    <main id="canvas" class="flex-1 relative overflow-hidden">
+        <div id="mindmap-root" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full">
         </div>
     </main>
 
     <script>
-        const COLORS = ['#FF7676', '#63FF9E', '#00B884', '#009669', '#99FFC4', '#33EB91', '#00D18B', '#4CC9F0', '#4895EF', '#F72585'];
-        
+        const COLORS = [
+            '#3b82f6','#6366f1','#8b5cf6','#ec4899',
+            '#14b8a6','#0ea5e9','#f59e0b','#10b981',
+            '#f43f5e','#a78bfa'
+        ];
+
         let mindmapData = {
-            id: 'root',
-            label: 'Travel plans',
-            color: '#FF7676',
-            x: 0, y: 0, vx: 0, vy: 0,
+            id: 'root', label: 'Travel Plans',
+            color: '#3b82f6', x: 0, y: 0, vx: 0, vy: 0,
             children: [
                 {
-                    id: '1',
-                    label: 'Singapore',
-                    color: '#63FF9E',
+                    id: '1', label: 'Singapore', color: '#6366f1',
                     children: [
-                        { id: '1-1', label: 'Documents', color: '#00B884', children: [] },
-                        { id: '1-2', label: 'Budget', color: '#009669', children: [] },
-                        { id: '1-3', label: 'Flights', color: '#99FFC4', children: [] },
-                        { id: '1-4', label: 'Hotels', color: '#33EB91', children: [] }
+                        { id: '1-1', label: 'Documents', color: '#8b5cf6', children: [] },
+                        { id: '1-2', label: 'Budget',    color: '#0ea5e9', children: [] },
+                        { id: '1-3', label: 'Flights',   color: '#14b8a6', children: [] },
+                        { id: '1-4', label: 'Hotels',    color: '#10b981', children: [] }
                     ]
                 }
             ]
         };
 
-        // --- Physics simulation parameters ---
-        const gravityStrength = 0.05; 
-        const damping = 0.92;
-        const springStrength = 0.02;
-        const idealDistance = 180;
+        // ── Physics constants ──────────────────────────────────────────
+        const DAMPING       = 0.88;
+        const SPRING_K      = 0.03;
+        const IDEAL_DIST    = 190;
+        const REPULSE_K     = 18000;   // collision repulsion strength
+        const GRAVITY       = 0.04;
+
+        function getRadius(depth) { return depth === 0 ? 60 : 45; }
 
         function initializeNodePositions(node, depth = 0, angle = 0) {
             if (typeof node.x !== 'number') {
-                const dist = depth * idealDistance;
+                const dist = depth * IDEAL_DIST;
                 node.x = Math.cos(angle) * dist;
                 node.y = Math.sin(angle) * dist;
             }
-            if (typeof node.vx !== 'number') node.vx = 0;
-            if (typeof node.vy !== 'number') node.vy = 0;
-
+            node.vx = node.vx || 0;
+            node.vy = node.vy || 0;
+            node._depth = depth;
             node.children.forEach((child, i) => {
-                const childAngle = (i / node.children.length) * 2 * Math.PI;
-                initializeNodePositions(child, depth + 1, childAngle);
+                const a = (i / node.children.length) * 2 * Math.PI;
+                initializeNodePositions(child, depth + 1, a);
             });
         }
 
+        // Flatten all nodes for pairwise repulsion
+        function flattenNodes(node, arr = []) {
+            arr.push(node);
+            node.children.forEach(c => flattenNodes(c, arr));
+            return arr;
+        }
+
         function simulate() {
+            const allNodes = flattenNodes(mindmapData);
+
+            // Tag depths
+            function tagDepth(node, d = 0) {
+                node._depth = d;
+                node.children.forEach(c => tagDepth(c, d + 1));
+            }
+            tagDepth(mindmapData);
+
             function applyForces(node, parent = null) {
                 // Gravity toward center
-                const distToCenter = Math.sqrt(node.x * node.x + node.y * node.y);
-                if (distToCenter > 0) {
-                    node.vx -= (node.x / distToCenter) * gravityStrength;
-                    node.vy -= (node.y / distToCenter) * gravityStrength;
+                const distC = Math.sqrt(node.x * node.x + node.y * node.y);
+                if (distC > 1) {
+                    node.vx -= (node.x / distC) * GRAVITY;
+                    node.vy -= (node.y / distC) * GRAVITY;
                 }
 
-                // Spring force to parent
+                // Spring to parent
                 if (parent) {
                     const dx = node.x - parent.x;
                     const dy = node.y - parent.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const force = (dist - idealDistance) * springStrength;
-                    if (dist > 0) {
-                        node.vx -= (dx / dist) * force;
-                        node.vy -= (dy / dist) * force;
-                        // Mutual force
-                        parent.vx += (dx / dist) * force * 0.5;
-                        parent.vy += (dy / dist) * force * 0.5;
-                    }
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const force = (dist - IDEAL_DIST) * SPRING_K;
+                    node.vx -= (dx / dist) * force;
+                    node.vy -= (dy / dist) * force;
+                    parent.vx += (dx / dist) * force * 0.5;
+                    parent.vy += (dy / dist) * force * 0.5;
                 }
 
                 node.children.forEach(child => applyForces(child, node));
             }
 
+            // Pairwise repulsion — keeps circles from overlapping
+            function applyRepulsion() {
+                for (let i = 0; i < allNodes.length; i++) {
+                    for (let j = i + 1; j < allNodes.length; j++) {
+                        const a = allNodes[i];
+                        const b = allNodes[j];
+                        const dx = b.x - a.x;
+                        const dy = b.y - a.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+                        const minDist = getRadius(a._depth) + getRadius(b._depth) + 12; // 12px padding
+
+                        if (dist < minDist * 2.5) {
+                            // Standard repulsion
+                            const force = REPULSE_K / (dist * dist);
+                            const fx = (dx / dist) * force;
+                            const fy = (dy / dist) * force;
+                            a.vx -= fx * 0.01;
+                            a.vy -= fy * 0.01;
+                            b.vx += fx * 0.01;
+                            b.vy += fy * 0.01;
+
+                            // Hard separation push when actually overlapping
+                            if (dist < minDist) {
+                                const overlap = (minDist - dist) / 2;
+                                a.x -= (dx / dist) * overlap;
+                                a.y -= (dy / dist) * overlap;
+                                b.x += (dx / dist) * overlap;
+                                b.y += (dy / dist) * overlap;
+                            }
+                        }
+                    }
+                }
+            }
+
             function updatePositions(node) {
-                if (node.id !== 'root') { // Keep root anchored or lightly floating
-                    node.vx *= damping;
-                    node.vy *= damping;
-                    node.x += node.vx;
-                    node.y += node.vy;
+                if (node.id !== 'root') {
+                    node.vx *= DAMPING;
+                    node.vy *= DAMPING;
+                    node.x  += node.vx;
+                    node.y  += node.vy;
                 } else {
-                    // Slow drift for root
                     node.x *= 0.9;
                     node.y *= 0.9;
                 }
@@ -155,6 +280,7 @@
             }
 
             applyForces(mindmapData);
+            applyRepulsion();
             updatePositions(mindmapData);
             renderMap();
             requestAnimationFrame(simulate);
@@ -166,75 +292,72 @@
             simulate();
         }
 
-        // --- Sidebar Logic ---
+        // ── Sidebar ────────────────────────────────────────────────────
         function renderSidebar() {
-            const container = document.getElementById('sidebar-content');
-            container.innerHTML = '';
-            container.appendChild(createSidebarNode(mindmapData));
+            const c = document.getElementById('sidebar-content');
+            c.innerHTML = '';
+            c.appendChild(createSidebarNode(mindmapData));
         }
 
         function createSidebarNode(node) {
-            const div = document.createElement('div');
-            div.className = 'space-y-1';
-            
-            const item = document.createElement('div');
-            item.className = 'flex items-center gap-2 p-1 hover:bg-slate-50 rounded group';
-            
+            const wrap = document.createElement('div');
+            wrap.className = 'space-y-1';
+
+            const row = document.createElement('div');
+            row.className = 'node-row flex items-center gap-2 p-1.5 rounded-lg group cursor-default';
+
             const dot = document.createElement('div');
             dot.className = 'w-3 h-3 rounded-full shrink-0';
             dot.style.backgroundColor = node.color;
-            
-            const input = document.createElement('input');
-            input.value = node.label;
-            input.className = 'text-sm font-medium border-none outline-none bg-transparent w-full';
-            input.oninput = (e) => { node.label = e.target.value; };
 
-            const controls = document.createElement('div');
-            controls.className = 'hidden group-hover:flex gap-1';
-            
+            const inp = document.createElement('input');
+            inp.value = node.label;
+            inp.className = 'sidebar-input';
+            inp.oninput = e => { node.label = e.target.value; };
+
+            const btns = document.createElement('div');
+            btns.className = 'hidden group-hover:flex gap-1';
+
             const addBtn = document.createElement('button');
             addBtn.innerHTML = '+';
-            addBtn.className = 'px-1.5 text-slate-400 hover:text-green-600';
+            addBtn.title = 'Add child';
+            addBtn.style.cssText = 'color:#60a5fa;font-size:1rem;font-weight:700;padding:0 4px;background:none;border:none;cursor:pointer;';
             addBtn.onclick = () => {
-                const newNode = {
+                node.children.push({
                     id: Date.now().toString(),
                     label: 'New Node',
                     color: COLORS[Math.floor(Math.random() * COLORS.length)],
-                    x: node.x + (Math.random() - 0.5) * 50,
-                    y: node.y + (Math.random() - 0.5) * 50,
-                    vx: 0, vy: 0,
-                    children: []
-                };
-                node.children.push(newNode);
+                    x: node.x + (Math.random() - 0.5) * 60,
+                    y: node.y + (Math.random() - 0.5) * 60,
+                    vx: 0, vy: 0, children: []
+                });
                 renderSidebar();
             };
 
             const delBtn = document.createElement('button');
             delBtn.innerHTML = '×';
-            delBtn.className = 'px-1.5 text-slate-400 hover:text-red-600';
+            delBtn.title = 'Delete node';
+            delBtn.style.cssText = 'color:#f87171;font-size:1rem;font-weight:700;padding:0 4px;background:none;border:none;cursor:pointer;';
             delBtn.onclick = () => {
                 deleteNodeRecursive(mindmapData, node.id);
                 renderSidebar();
             };
 
-            controls.appendChild(addBtn);
-            if (node.id !== 'root') controls.appendChild(delBtn);
+            btns.appendChild(addBtn);
+            if (node.id !== 'root') btns.appendChild(delBtn);
 
-            item.appendChild(dot);
-            item.appendChild(input);
-            item.appendChild(controls);
-            div.appendChild(item);
+            row.appendChild(dot);
+            row.appendChild(inp);
+            row.appendChild(btns);
+            wrap.appendChild(row);
 
             if (node.children.length > 0) {
-                const childContainer = document.createElement('div');
-                childContainer.className = 'sidebar-node';
-                node.children.forEach(child => {
-                    childContainer.appendChild(createSidebarNode(child));
-                });
-                div.appendChild(childContainer);
+                const kids = document.createElement('div');
+                kids.className = 'sidebar-node';
+                node.children.forEach(c => kids.appendChild(createSidebarNode(c)));
+                wrap.appendChild(kids);
             }
-
-            return div;
+            return wrap;
         }
 
         function deleteNodeRecursive(parent, id) {
@@ -242,7 +365,7 @@
             parent.children.forEach(c => deleteNodeRecursive(c, id));
         }
 
-        // --- Mindmap Drawing Logic ---
+        // ── Canvas rendering ───────────────────────────────────────────
         function renderMap() {
             const container = document.getElementById('mindmap-root');
             container.innerHTML = '';
@@ -250,70 +373,94 @@
         }
 
         function drawNode(node, container, depth) {
-            const nodeX = node.x || 0;
-            const nodeY = node.y || 0;
+            const nx = node.x || 0, ny = node.y || 0;
 
-            // Draw connectors to children first
-            node.children.forEach((child) => {
-                const childX = child.x || 0;
-                const childY = child.y || 0;
-                
-                const dx = childX - nodeX;
-                const dy = childY - nodeY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+            node.children.forEach(child => {
+                const cx = child.x || 0, cy = child.y || 0;
+                const dx = cx - nx, dy = cy - ny;
+                const dist = Math.sqrt(dx * dx + dy * dy);
                 const angle = Math.atan2(dy, dx);
 
-                const connector = document.createElement('div');
-                connector.className = 'connector';
-                connector.style.width = distance + 'px';
-                connector.style.left = `calc(50% + ${nodeX}px)`;
-                connector.style.top = `calc(50% + ${nodeY}px)`;
-                connector.style.transform = `rotate(${angle}rad)`;
-                container.appendChild(connector);
+                // Shorten line so it starts/ends at circle edges
+                const r1 = getRadius(depth);
+                const r2 = getRadius(depth + 1);
+                const shortenedDist = Math.max(0, dist - r1 - r2);
+                const offsetX = (dx / dist) * r1;
+                const offsetY = (dy / dist) * r1;
+
+                const line = document.createElement('div');
+                line.className = 'connector';
+                line.style.width  = shortenedDist + 'px';
+                line.style.left   = `calc(50% + ${nx + offsetX}px)`;
+                line.style.top    = `calc(50% + ${ny + offsetY}px)`;
+                line.style.transform = `rotate(${angle}rad)`;
+                container.appendChild(line);
 
                 drawNode(child, container, depth + 1);
             });
 
-            // Draw the node
-            const nodeEl = document.createElement('div');
-            nodeEl.className = 'node';
-            nodeEl.innerText = node.label;
-            nodeEl.style.backgroundColor = node.color;
-            
-            const size = depth === 0 ? 120 : 90;
-            nodeEl.style.width = size + 'px';
-            nodeEl.style.height = size + 'px';
-            nodeEl.style.fontSize = depth === 0 ? '16px' : '13px';
-            
-            nodeEl.style.left = `calc(50% + ${nodeX}px)`;
-            nodeEl.style.top = `calc(50% + ${nodeY}px)`;
-            nodeEl.style.transform = 'translate(-50%, -50%)';
-            
-            container.appendChild(nodeEl);
+            const el = document.createElement('div');
+            el.className = 'node';
+            el.innerText = node.label;
+            el.style.backgroundColor = node.color;
+            const size = getRadius(depth) * 2;
+            el.style.width  = size + 'px';
+            el.style.height = size + 'px';
+            el.style.fontSize = depth === 0 ? '14px' : '11px';
+            el.style.left = `calc(50% + ${nx}px)`;
+            el.style.top  = `calc(50% + ${ny}px)`;
+            el.style.transform = 'translate(-50%, -50%)';
+            container.appendChild(el);
         }
 
-        // --- Data Persistence ---
+        // ── Save snapshot (PNG via canvas) ─────────────────────────────
+        function saveSnapshot() {
+            const mindmapEl = document.getElementById('canvas');
+            // Use html2canvas if available, otherwise fall back to JSON
+            if (typeof html2canvas !== 'undefined') {
+                html2canvas(mindmapEl, { backgroundColor: '#0a1628', scale: 2 }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `mindmap-${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            } else {
+                // Fallback: auto-save JSON with timestamp
+                const dataStr = JSON.stringify(mindmapData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url  = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href     = url;
+                link.download = `mindmap-snapshot-${Date.now()}.json`;
+                link.click();
+                alert('PNG requires html2canvas. Saved as JSON instead.');
+            }
+        }
+
+        // ── JSON Export / Import ───────────────────────────────────────
         function exportData() {
-            const dataStr = JSON.stringify(mindmapData, null, 2);
-            const blob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
+            const blob = new Blob([JSON.stringify(mindmapData, null, 2)], { type: 'application/json' });
+            const url  = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = url;
-            link.download = 'mindmap.json';
-            link.click();
+            link.href = url; link.download = 'mindmap.json'; link.click();
         }
 
         function importData(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (event) => {
-                mindmapData = JSON.parse(event.target.result);
+            reader.onload = ev => {
+                mindmapData = JSON.parse(ev.target.result);
                 initializeNodePositions(mindmapData);
                 renderSidebar();
             };
             reader.readAsText(file);
         }
+
+        // Load html2canvas for PNG export
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(s);
 
         window.onload = render;
     </script>
