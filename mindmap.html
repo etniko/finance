@@ -43,7 +43,6 @@
             padding-left: 0.5rem;
         }
 
-        /* Sidebar dark theme */
         aside {
             background-color: #0d1f3c;
             border-right: 1px solid #1e3a5f;
@@ -64,19 +63,16 @@
             color: #93c5fd;
         }
 
-        /* Canvas dark dot grid */
         #canvas {
             background-color: #0a1628;
             background-image: radial-gradient(rgba(99,179,255,0.15) 1px, transparent 1px);
             background-size: 22px 22px;
         }
 
-        /* Scrollbar */
         #sidebar-content::-webkit-scrollbar { width: 5px; }
         #sidebar-content::-webkit-scrollbar-track { background: #0d1f3c; }
         #sidebar-content::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 4px; }
 
-        /* Buttons */
         .btn-primary {
             background: linear-gradient(135deg, #1d4ed8, #2563eb);
             color: white;
@@ -113,6 +109,7 @@
             transition: all 0.2s;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 5px;
         }
         .btn-save:hover { background: linear-gradient(135deg, #047857, #059669); box-shadow: 0 0 12px rgba(16,185,129,0.35); }
@@ -134,7 +131,7 @@
         <div class="p-4 border-t border-[#1e3a5f] grid grid-cols-2 gap-2">
             <button onclick="exportData()" class="btn-primary">⬇ Export JSON</button>
             <button onclick="document.getElementById('import-input').click()" class="btn-secondary">⬆ Import JSON</button>
-            <button onclick="saveSnapshot()" class="btn-save col-span-2">💾 Save Snapshot (PNG)</button>
+            <button onclick="saveHTML()" class="btn-save col-span-2">💾 Save as HTML</button>
             <input type="file" id="import-input" class="hidden" accept=".json" onchange="importData(event)">
         </div>
     </aside>
@@ -145,34 +142,21 @@
         </div>
     </main>
 
-    <script>
+    <script id="mindmap-data-script">
         const COLORS = [
             '#3b82f6','#6366f1','#8b5cf6','#ec4899',
             '#14b8a6','#0ea5e9','#f59e0b','#10b981',
             '#f43f5e','#a78bfa'
         ];
 
-        let mindmapData = {
-            id: 'root', label: 'Travel Plans',
-            color: '#3b82f6', x: 0, y: 0, vx: 0, vy: 0,
-            children: [
-                {
-                    id: '1', label: 'Singapore', color: '#6366f1',
-                    children: [
-                        { id: '1-1', label: 'Documents', color: '#8b5cf6', children: [] },
-                        { id: '1-2', label: 'Budget',    color: '#0ea5e9', children: [] },
-                        { id: '1-3', label: 'Flights',   color: '#14b8a6', children: [] },
-                        { id: '1-4', label: 'Hotels',    color: '#10b981', children: [] }
-                    ]
-                }
-            ]
-        };
+        // MINDMAP_DATA_PLACEHOLDER — do not remove this comment, it is used by saveHTML()
+        let mindmapData = {"id":"root","label":"Travel Plans","color":"#3b82f6","x":0,"y":0,"vx":0,"vy":0,"children":[{"id":"1","label":"Singapore","color":"#6366f1","children":[{"id":"1-1","label":"Documents","color":"#8b5cf6","children":[]},{"id":"1-2","label":"Budget","color":"#0ea5e9","children":[]},{"id":"1-3","label":"Flights","color":"#14b8a6","children":[]},{"id":"1-4","label":"Hotels","color":"#10b981","children":[]}]}]};
 
         // ── Physics constants ──────────────────────────────────────────
         const DAMPING       = 0.88;
         const SPRING_K      = 0.03;
         const IDEAL_DIST    = 190;
-        const REPULSE_K     = 18000;   // collision repulsion strength
+        const REPULSE_K     = 18000;
         const GRAVITY       = 0.04;
 
         function getRadius(depth) { return depth === 0 ? 60 : 45; }
@@ -192,7 +176,6 @@
             });
         }
 
-        // Flatten all nodes for pairwise repulsion
         function flattenNodes(node, arr = []) {
             arr.push(node);
             node.children.forEach(c => flattenNodes(c, arr));
@@ -202,7 +185,6 @@
         function simulate() {
             const allNodes = flattenNodes(mindmapData);
 
-            // Tag depths
             function tagDepth(node, d = 0) {
                 node._depth = d;
                 node.children.forEach(c => tagDepth(c, d + 1));
@@ -210,14 +192,11 @@
             tagDepth(mindmapData);
 
             function applyForces(node, parent = null) {
-                // Gravity toward center
                 const distC = Math.sqrt(node.x * node.x + node.y * node.y);
                 if (distC > 1) {
                     node.vx -= (node.x / distC) * GRAVITY;
                     node.vy -= (node.y / distC) * GRAVITY;
                 }
-
-                // Spring to parent
                 if (parent) {
                     const dx = node.x - parent.x;
                     const dy = node.y - parent.y;
@@ -228,11 +207,9 @@
                     parent.vx += (dx / dist) * force * 0.5;
                     parent.vy += (dy / dist) * force * 0.5;
                 }
-
                 node.children.forEach(child => applyForces(child, node));
             }
 
-            // Pairwise repulsion — keeps circles from overlapping
             function applyRepulsion() {
                 for (let i = 0; i < allNodes.length; i++) {
                     for (let j = i + 1; j < allNodes.length; j++) {
@@ -241,10 +218,9 @@
                         const dx = b.x - a.x;
                         const dy = b.y - a.y;
                         const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
-                        const minDist = getRadius(a._depth) + getRadius(b._depth) + 12; // 12px padding
+                        const minDist = getRadius(a._depth) + getRadius(b._depth) + 12;
 
                         if (dist < minDist * 2.5) {
-                            // Standard repulsion
                             const force = REPULSE_K / (dist * dist);
                             const fx = (dx / dist) * force;
                             const fy = (dy / dist) * force;
@@ -253,7 +229,6 @@
                             b.vx += fx * 0.01;
                             b.vy += fy * 0.01;
 
-                            // Hard separation push when actually overlapping
                             if (dist < minDist) {
                                 const overlap = (minDist - dist) / 2;
                                 a.x -= (dx / dist) * overlap;
@@ -381,7 +356,6 @@
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 const angle = Math.atan2(dy, dx);
 
-                // Shorten line so it starts/ends at circle edges
                 const r1 = getRadius(depth);
                 const r2 = getRadius(depth + 1);
                 const shortenedDist = Math.max(0, dist - r1 - r2);
@@ -413,28 +387,39 @@
             container.appendChild(el);
         }
 
-        // ── Save snapshot (PNG via canvas) ─────────────────────────────
-        function saveSnapshot() {
-            const mindmapEl = document.getElementById('canvas');
-            // Use html2canvas if available, otherwise fall back to JSON
-            if (typeof html2canvas !== 'undefined') {
-                html2canvas(mindmapEl, { backgroundColor: '#0a1628', scale: 2 }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `mindmap-${Date.now()}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                });
-            } else {
-                // Fallback: auto-save JSON with timestamp
-                const dataStr = JSON.stringify(mindmapData, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url  = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href     = url;
-                link.download = `mindmap-snapshot-${Date.now()}.json`;
-                link.click();
-                alert('PNG requires html2canvas. Saved as JSON instead.');
+        // ── Save as HTML (embeds current mindmapData into a fresh copy of this file) ──
+        function saveHTML() {
+            // Cleanly strip simulation-only properties before saving
+            function cleanNode(node) {
+                return {
+                    id: node.id,
+                    label: node.label,
+                    color: node.color,
+                    x: Math.round(node.x) || 0,
+                    y: Math.round(node.y) || 0,
+                    vx: 0, vy: 0,
+                    children: node.children.map(cleanNode)
+                };
             }
+            const cleanData = cleanNode(mindmapData);
+            const dataJSON  = JSON.stringify(cleanData);
+
+            // Grab the full HTML source and replace only the data line
+            let html = document.documentElement.outerHTML;
+
+            // Replace the let mindmapData = {...}; line with fresh data
+            html = html.replace(
+                /let mindmapData\s*=\s*(\{[\s\S]*?\});/,
+                `let mindmapData = ${dataJSON};`
+            );
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url  = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href     = url;
+            link.download = `mindmap-${Date.now()}.html`;
+            link.click();
+            URL.revokeObjectURL(url);
         }
 
         // ── JSON Export / Import ───────────────────────────────────────
@@ -456,11 +441,6 @@
             };
             reader.readAsText(file);
         }
-
-        // Load html2canvas for PNG export
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        document.head.appendChild(s);
 
         window.onload = render;
     </script>
