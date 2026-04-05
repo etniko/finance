@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Circular Mindmap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .node {
+            transition: transform 0.2s ease-out;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            border: 4px solid white;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            user-select: none;
+            /* Ensure nodes are above lines */
+            z-index: 20; 
+            background-clip: padding-box;
+        }
+        .node:hover {
+            transform: translate(-50%, -50%) scale(1.1) !important;
+        }
+        .connector {
+            position: absolute;
+            background: #e2e8f0;
+            height: 2px;
+            transform-origin: left center;
+            /* Ensure lines are below nodes */
+            z-index: 5;
+            pointer-events: none;
+        }
+        .sidebar-node {
+            border-left: 1px solid #e2e8f0;
+            margin-left: 0.75rem;
+            padding-left: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-80 bg-white border-r border-slate-200 flex flex-col shadow-xl z-30">
+        <div class="p-6 border-b border-slate-100">
+            <h1 class="text-xl font-bold text-slate-900">MindMap Editor</h1>
+            <p class="text-xs text-slate-500 mt-1">Manage your hierarchy below</p>
+        </div>
+
+        <div id="sidebar-content" class="flex-1 overflow-y-auto p-4 space-y-2">
+            <!-- Tree structure injected here -->
+        </div>
+
+        <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-2">
+            <button onclick="exportData()" class="bg-indigo-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-indigo-700">Export JSON</button>
+            <button onclick="document.getElementById('import-input').click()" class="bg-white border border-slate-300 py-2 px-3 rounded-lg text-sm font-medium hover:bg-slate-100">Import JSON</button>
+            <input type="file" id="import-input" class="hidden" accept=".json" onchange="importData(event)">
+        </div>
+    </aside>
+
+    <!-- Canvas -->
+    <main id="canvas" class="flex-1 relative overflow-hidden bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]">
+        <div id="mindmap-root" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center">
+            <!-- Mindmap nodes injected here -->
+        </div>
+    </main>
+
+    <script>
+        const COLORS = ['#FF7676', '#63FF9E', '#00B884', '#009669', '#99FFC4', '#33EB91', '#00D18B', '#4CC9F0', '#4895EF', '#F72585'];
+        
+        let mindmapData = {
+            id: 'root',
+            label: 'Travel plans',
+            color: '#FF7676',
+            x: 0, y: 0, vx: 0, vy: 0,
+            children: [
+                {
+                    id: '1',
+                    label: 'Singapore',
+                    color: '#63FF9E',
+                    children: [
+                        { id: '1-1', label: 'Documents', color: '#00B884', children: [] },
+                        { id: '1-2', label: 'Budget', color: '#009669', children: [] },
+                        { id: '1-3', label: 'Flights', color: '#99FFC4', children: [] },
+                        { id: '1-4', label: 'Hotels', color: '#33EB91', children: [] }
+                    ]
+                }
+            ]
+        };
+
+        // --- Physics simulation parameters ---
+        const gravityStrength = 0.05; 
+        const damping = 0.92;
+        const springStrength = 0.02;
+        const idealDistance = 180;
+
+        function initializeNodePositions(node, depth = 0, angle = 0) {
+            if (typeof node.x !== 'number') {
+                const dist = depth * idealDistance;
+                node.x = Math.cos(angle) * dist;
+                node.y = Math.sin(angle) * dist;
+            }
+            if (typeof node.vx !== 'number') node.vx = 0;
+            if (typeof node.vy !== 'number') node.vy = 0;
+
+            node.children.forEach((child, i) => {
+                const childAngle = (i / node.children.length) * 2 * Math.PI;
+                initializeNodePositions(child, depth + 1, childAngle);
+            });
+        }
+
+        function simulate() {
+            function applyForces(node, parent = null) {
+                // Gravity toward center
+                const distToCenter = Math.sqrt(node.x * node.x + node.y * node.y);
+                if (distToCenter > 0) {
+                    node.vx -= (node.x / distToCenter) * gravityStrength;
+                    node.vy -= (node.y / distToCenter) * gravityStrength;
+                }
+
+                // Spring force to parent
+                if (parent) {
+                    const dx = node.x - parent.x;
+                    const dy = node.y - parent.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const force = (dist - idealDistance) * springStrength;
+                    if (dist > 0) {
+                        node.vx -= (dx / dist) * force;
+                        node.vy -= (dy / dist) * force;
+                        // Mutual force
+                        parent.vx += (dx / dist) * force * 0.5;
+                        parent.vy += (dy / dist) * force * 0.5;
+                    }
+                }
+
+                node.children.forEach(child => applyForces(child, node));
+            }
+
+            function updatePositions(node) {
+                if (node.id !== 'root') { // Keep root anchored or lightly floating
+                    node.vx *= damping;
+                    node.vy *= damping;
+                    node.x += node.vx;
+                    node.y += node.vy;
+                } else {
+                    // Slow drift for root
+                    node.x *= 0.9;
+                    node.y *= 0.9;
+                }
+                node.children.forEach(updatePositions);
+            }
+
+            applyForces(mindmapData);
+            updatePositions(mindmapData);
+            renderMap();
+            requestAnimationFrame(simulate);
+        }
+
+        function render() {
+            initializeNodePositions(mindmapData);
+            renderSidebar();
+            simulate();
+        }
+
+        // --- Sidebar Logic ---
+        function renderSidebar() {
+            const container = document.getElementById('sidebar-content');
+            container.innerHTML = '';
+            container.appendChild(createSidebarNode(mindmapData));
+        }
+
+        function createSidebarNode(node) {
+            const div = document.createElement('div');
+            div.className = 'space-y-1';
+            
+            const item = document.createElement('div');
+            item.className = 'flex items-center gap-2 p-1 hover:bg-slate-50 rounded group';
+            
+            const dot = document.createElement('div');
+            dot.className = 'w-3 h-3 rounded-full shrink-0';
+            dot.style.backgroundColor = node.color;
+            
+            const input = document.createElement('input');
+            input.value = node.label;
+            input.className = 'text-sm font-medium border-none outline-none bg-transparent w-full';
+            input.oninput = (e) => { node.label = e.target.value; };
+
+            const controls = document.createElement('div');
+            controls.className = 'hidden group-hover:flex gap-1';
+            
+            const addBtn = document.createElement('button');
+            addBtn.innerHTML = '+';
+            addBtn.className = 'px-1.5 text-slate-400 hover:text-green-600';
+            addBtn.onclick = () => {
+                const newNode = {
+                    id: Date.now().toString(),
+                    label: 'New Node',
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                    x: node.x + (Math.random() - 0.5) * 50,
+                    y: node.y + (Math.random() - 0.5) * 50,
+                    vx: 0, vy: 0,
+                    children: []
+                };
+                node.children.push(newNode);
+                renderSidebar();
+            };
+
+            const delBtn = document.createElement('button');
+            delBtn.innerHTML = '×';
+            delBtn.className = 'px-1.5 text-slate-400 hover:text-red-600';
+            delBtn.onclick = () => {
+                deleteNodeRecursive(mindmapData, node.id);
+                renderSidebar();
+            };
+
+            controls.appendChild(addBtn);
+            if (node.id !== 'root') controls.appendChild(delBtn);
+
+            item.appendChild(dot);
+            item.appendChild(input);
+            item.appendChild(controls);
+            div.appendChild(item);
+
+            if (node.children.length > 0) {
+                const childContainer = document.createElement('div');
+                childContainer.className = 'sidebar-node';
+                node.children.forEach(child => {
+                    childContainer.appendChild(createSidebarNode(child));
+                });
+                div.appendChild(childContainer);
+            }
+
+            return div;
+        }
+
+        function deleteNodeRecursive(parent, id) {
+            parent.children = parent.children.filter(c => c.id !== id);
+            parent.children.forEach(c => deleteNodeRecursive(c, id));
+        }
+
+        // --- Mindmap Drawing Logic ---
+        function renderMap() {
+            const container = document.getElementById('mindmap-root');
+            container.innerHTML = '';
+            drawNode(mindmapData, container, 0);
+        }
+
+        function drawNode(node, container, depth) {
+            const nodeX = node.x || 0;
+            const nodeY = node.y || 0;
+
+            // Draw connectors to children first
+            node.children.forEach((child) => {
+                const childX = child.x || 0;
+                const childY = child.y || 0;
+                
+                const dx = childX - nodeX;
+                const dy = childY - nodeY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+
+                const connector = document.createElement('div');
+                connector.className = 'connector';
+                connector.style.width = distance + 'px';
+                connector.style.left = `calc(50% + ${nodeX}px)`;
+                connector.style.top = `calc(50% + ${nodeY}px)`;
+                connector.style.transform = `rotate(${angle}rad)`;
+                container.appendChild(connector);
+
+                drawNode(child, container, depth + 1);
+            });
+
+            // Draw the node
+            const nodeEl = document.createElement('div');
+            nodeEl.className = 'node';
+            nodeEl.innerText = node.label;
+            nodeEl.style.backgroundColor = node.color;
+            
+            const size = depth === 0 ? 120 : 90;
+            nodeEl.style.width = size + 'px';
+            nodeEl.style.height = size + 'px';
+            nodeEl.style.fontSize = depth === 0 ? '16px' : '13px';
+            
+            nodeEl.style.left = `calc(50% + ${nodeX}px)`;
+            nodeEl.style.top = `calc(50% + ${nodeY}px)`;
+            nodeEl.style.transform = 'translate(-50%, -50%)';
+            
+            container.appendChild(nodeEl);
+        }
+
+        // --- Data Persistence ---
+        function exportData() {
+            const dataStr = JSON.stringify(mindmapData, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'mindmap.json';
+            link.click();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                mindmapData = JSON.parse(event.target.result);
+                initializeNodePositions(mindmapData);
+                renderSidebar();
+            };
+            reader.readAsText(file);
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
